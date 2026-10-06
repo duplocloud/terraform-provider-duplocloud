@@ -250,3 +250,23 @@ func TestSecretDataCompare_UnchangedLargeIntegerFromBackendMatches(t *testing.T)
 	assert.NoError(t, err)
 	assert.True(t, equal)
 }
+
+// The backend can respell a number inside a decoded value, so numbers are matched by
+// value: 1e3 and 1000.0 are the same, while large integers still differ.
+func TestSecretDataCompare_NumbersMatchByValue(t *testing.T) {
+	for _, tc := range []struct {
+		state, config string
+		equal         bool
+	}{
+		{`{"k":{"n":1000.0}}`, `{"k":"{\"n\":1e3}"}`, true},
+		{`{"k":{"n":1.5}}`, `{"k":"{\"n\":1.50}"}`, true},
+		{`{"k":[1,2.0]}`, `{"k":"[1.0,2]"}`, true},
+		{`{"k":{"n":1000}}`, `{"k":"{\"n\":1001}"}`, false},
+		{`{"k":{"n":9007199254740992}}`, `{"k":"{\"n\":9007199254740993}"}`, false},
+		{`{"k":{"n":1}}`, `{"k":"{\"n\":\"1\"}"}`, false},
+	} {
+		equal, err := secretDataCompare(tc.state, tc.config)
+		assert.NoError(t, err)
+		assert.Equal(t, tc.equal, equal, "%s vs %s", tc.state, tc.config)
+	}
+}

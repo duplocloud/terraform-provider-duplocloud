@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"reflect"
+	"math/big"
 	"regexp"
 	"strings"
 	"time"
@@ -511,7 +511,49 @@ func secretValueEqual(state, config interface{}) bool {
 			config = decoded
 		}
 	}
-	return reflect.DeepEqual(state, config)
+	return secretJSONEqual(state, config)
+}
+
+// secretJSONEqual compares two decoded JSON values, matching numbers by value rather than
+// spelling.  The backend round-trips a decoded value through Newtonsoft, which can rewrite
+// 1e3 as 1000.0 or 1.50 as 1.5, so comparing the digit strings would plan on every run.
+// big.Rat holds each number exactly, so integers above 2^53 still stay distinct.
+func secretJSONEqual(a, b interface{}) bool {
+	switch av := a.(type) {
+	case map[string]interface{}:
+		bv, ok := b.(map[string]interface{})
+		if !ok || len(av) != len(bv) {
+			return false
+		}
+		for k, v := range av {
+			w, ok := bv[k]
+			if !ok || !secretJSONEqual(v, w) {
+				return false
+			}
+		}
+		return true
+	case []interface{}:
+		bv, ok := b.([]interface{})
+		if !ok || len(av) != len(bv) {
+			return false
+		}
+		for i := range av {
+			if !secretJSONEqual(av[i], bv[i]) {
+				return false
+			}
+		}
+		return true
+	case json.Number:
+		bv, ok := b.(json.Number)
+		if !ok {
+			return false
+		}
+		x, okA := new(big.Rat).SetString(string(av))
+		y, okB := new(big.Rat).SetString(string(bv))
+		return okA && okB && x.Cmp(y) == 0
+	default:
+		return a == b
+	}
 }
 
 // k8sSecretRawAccessor is satisfied by both *schema.ResourceData and *schema.ResourceDiff.
