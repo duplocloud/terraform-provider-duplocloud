@@ -180,6 +180,20 @@ func TestSecretDataCompare_DecodedObjectStillDiffsOnRealChange(t *testing.T) {
 	assert.False(t, equal, "non-JSON string against an object")
 }
 
+// Only objects and arrays are decoded by the backend, so a scalar that parses as JSON
+// is still compared as the string it is.
+func TestSecretDataCompare_JSONScalarStringIsNotDecoded(t *testing.T) {
+	for _, tc := range []struct{ state, config string }{
+		{`{"x":1}`, `{"x":"1"}`},
+		{`{"x":true}`, `{"x":"true"}`},
+		{`{"x":null}`, `{"x":"null"}`},
+	} {
+		equal, err := secretDataCompare(tc.state, tc.config)
+		assert.NoError(t, err)
+		assert.False(t, equal, tc.config)
+	}
+}
+
 // The object form in the configuration compares against the object in state as well.
 func TestSecretDataCompare_ObjectInConfigMatchesObjectInState(t *testing.T) {
 	equal, err := secretDataCompare(dockerConfigJSONState, dockerConfigJSONState)

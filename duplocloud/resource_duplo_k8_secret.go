@@ -479,7 +479,8 @@ func secretDataCompare(old, new string) (bool, error) {
 // secretValueEqual compares one value held in state against the configured one.  The
 // backend decodes any value that looks like a JSON object or array before returning it,
 // so a dockerconfigjson secret comes back as an object while the configuration holds the
-// string it was written from.  Such a string is decoded before comparing.
+// string it was written from.  Such a string is decoded before comparing, but only into an
+// object or array - a scalar is never decoded by the backend, so 1 and "1" stay distinct.
 func secretValueEqual(state, config interface{}) bool {
 	if _, ok := state.(string); ok {
 		return state == fmt.Sprintf("%v", config)
@@ -489,7 +490,10 @@ func secretValueEqual(state, config interface{}) bool {
 		if err := json.Unmarshal([]byte(s), &decoded); err != nil {
 			return false
 		}
-		config = decoded
+		switch decoded.(type) {
+		case map[string]interface{}, []interface{}:
+			config = decoded
+		}
 	}
 	return reflect.DeepEqual(state, config)
 }
