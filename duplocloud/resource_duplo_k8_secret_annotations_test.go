@@ -3,6 +3,8 @@ package duplocloud
 import (
 	"testing"
 
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -49,4 +51,68 @@ func TestK8sSecretAnnotationsForState_ReportsADifferentSkipEncodingValue(t *test
 	configured := map[string]interface{}{"duplocloud.net/skip-encoding": "true"}
 
 	assert.Equal(t, backend, k8sSecretAnnotationsForState(configured, backend))
+}
+
+// State written before Read reconciled the annotation still holds the backend's value.
+// Read cannot drop it then, since it sees prior state rather than configuration, so the
+// plan has to settle it against the raw configuration instead.
+
+func annotationsPlan(t *testing.T, state, config cty.Value) *terraform.InstanceDiff {
+	t.Helper()
+	data := cty.StringVal(`{"k":"v"}`)
+	return driftPlan(t,
+		driftObjectWith(driftState(data), "secret_annotations", state),
+		driftObjectWith(driftConfig(data), "secret_annotations", config))
+}
+
+func assertNoAnnotationsDiff(t *testing.T, diff *terraform.InstanceDiff) {
+	t.Helper()
+	if diff == nil {
+		return
+	}
+	for k := range diff.Attributes {
+		assert.NotContains(t, k, "secret_annotations")
+	}
+}
+
+func driftObjectWith(obj cty.Value, name string, v cty.Value) cty.Value {
+	vals := obj.AsValueMap()
+	vals[name] = v
+	return cty.ObjectVal(vals)
+}
+
+func TestK8sSecretAnnotationsPlan_StaleBackendSkipEncodingConverges(t *testing.T) {
+	state := cty.MapVal(map[string]cty.Value{"n": cty.StringVal("1"), "duplocloud.net/skip-encoding": cty.StringVal("False")})
+	config := cty.MapVal(map[string]cty.Value{"n": cty.StringVal("1")})
+
+	diff := annotationsPlan(t, state, config)
+
+	assertNoAnnotationsDiff(t, diff)
+}
+
+func TestK8sSecretAnnotationsPlan_StaleSkipEncodingSpellingConverges(t *testing.T) {
+	state := cty.MapVal(map[string]cty.Value{"duplocloud.net/skip-encoding": cty.StringVal("True")})
+	config := cty.MapVal(map[string]cty.Value{"duplocloud.net/skip-encoding": cty.StringVal("true")})
+
+	diff := annotationsPlan(t, state, config)
+
+	assertNoAnnotationsDiff(t, diff)
+}
+
+func TestK8sSecretAnnotationsPlan_RealAnnotationChangeStillPlans(t *testing.T) {
+	state := cty.MapVal(map[string]cty.Value{"n": cty.StringVal("1"), "duplocloud.net/skip-encoding": cty.StringVal("False")})
+	config := cty.MapVal(map[string]cty.Value{"n": cty.StringVal("2")})
+
+	diff := annotationsPlan(t, state, config)
+
+	assert.Contains(t, diff.Attributes, "secret_annotations.n")
+}
+
+func TestK8sSecretAnnotationsPlan_ConfiguredSkipEncodingValueChangeStillPlans(t *testing.T) {
+	state := cty.MapVal(map[string]cty.Value{"duplocloud.net/skip-encoding": cty.StringVal("False")})
+	config := cty.MapVal(map[string]cty.Value{"duplocloud.net/skip-encoding": cty.StringVal("true")})
+
+	diff := annotationsPlan(t, state, config)
+
+	assert.Contains(t, diff.Attributes, "secret_annotations.duplocloud.net/skip-encoding")
 }

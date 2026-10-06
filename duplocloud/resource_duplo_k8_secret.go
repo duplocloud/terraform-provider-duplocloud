@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"maps"
 	"regexp"
 	"strings"
 	"time"
@@ -114,7 +115,7 @@ func resourceK8Secret() *schema.Resource {
 				return []*schema.ResourceData{d}, nil
 			},
 		},
-		CustomizeDiff: validateK8sSecretDataManagement,
+		CustomizeDiff: customizeK8SecretDiff,
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(15 * time.Minute),
 			Update: schema.DefaultTimeout(15 * time.Minute),
@@ -330,6 +331,50 @@ func k8sSecretAnnotationsForState(configured map[string]interface{}, backend map
 		annotations[k8sSecretSkipEncodingAnnotation] = want
 	}
 	return annotations
+}
+
+// suppressK8sSecretSkipEncodingDrift clears a secret_annotations change that only Read's
+// reconciliation would have hidden.  Read judges ownership of the annotation by d.Get,
+// which during a refresh is prior state, so state written before that reconciliation
+// existed still holds the backend's value and keeps planning its removal.  The raw
+// configuration is authoritative here, so the same reconciliation is applied against it.
+func suppressK8sSecretSkipEncodingDrift(diff *schema.ResourceDiff) error {
+	if !diff.HasChange("secret_annotations") {
+		return nil
+	}
+	config := diff.GetRawConfig()
+	if config.IsNull() || !config.IsKnown() || !config.Type().IsObjectType() || !config.Type().HasAttribute("secret_annotations") {
+		return nil
+	}
+	v := config.GetAttr("secret_annotations")
+	if v.IsNull() || !v.IsWhollyKnown() {
+		return nil
+	}
+	configured := map[string]interface{}{}
+	want := map[string]string{}
+	for k, e := range v.AsValueMap() {
+		if e.IsNull() {
+			continue
+		}
+		configured[k] = e.AsString()
+		want[k] = e.AsString()
+	}
+	o, _ := diff.GetChange("secret_annotations")
+	backend := map[string]string{}
+	for k, e := range o.(map[string]interface{}) {
+		backend[k], _ = e.(string)
+	}
+	if maps.Equal(k8sSecretAnnotationsForState(configured, backend), want) {
+		return diff.Clear("secret_annotations")
+	}
+	return nil
+}
+
+func customizeK8SecretDiff(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	if err := suppressK8sSecretSkipEncodingDrift(diff); err != nil {
+		return err
+	}
+	return validateK8sSecretDataManagement(ctx, diff, m)
 }
 
 func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
