@@ -206,3 +206,31 @@ func TestSecretDataDiff_DockerConfigJSONConverges(t *testing.T) {
 
 	assert.NotContains(t, diff.Attributes, "secret_data")
 }
+
+// Integers above 2^53 do not survive a float64, so both sides are decoded with their
+// digits intact and an edit between two such integers still plans.
+func TestSecretDataCompare_LargeIntegersStayDistinct(t *testing.T) {
+	state := `{"k":{"n":9007199254740992}}`
+
+	equal, err := secretDataCompare(state, `{"k":"{\"n\":9007199254740993}"}`)
+	assert.NoError(t, err)
+	assert.False(t, equal, "changed integer")
+
+	equal, err = secretDataCompare(state, `{"k":"{\"n\":9007199254740992}"}`)
+	assert.NoError(t, err)
+	assert.True(t, equal, "same integer")
+
+	equal, err = secretDataCompare(`{"n":9007199254740992}`, `{"n":9007199254740993}`)
+	assert.NoError(t, err)
+	assert.False(t, equal, "top-level integer")
+}
+
+// Trailing data after the JSON value is still rejected, as json.Unmarshal did.
+func TestSecretDataCompare_TrailingDataIsNotJSON(t *testing.T) {
+	_, err := secretDataCompare(`{"k":"v"} junk`, `{"k":"v"}`)
+	assert.Error(t, err)
+
+	equal, err := secretDataCompare(`{"k":{"a":1}}`, `{"k":"{\"a\":1} junk"}`)
+	assert.NoError(t, err)
+	assert.False(t, equal, "config string with trailing data is compared as a string")
+}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"reflect"
 	"regexp"
@@ -449,10 +450,25 @@ func parseSecretData(s string) (map[string]interface{}, error) {
 	if s == "" {
 		return obj, nil
 	}
-	if err := json.Unmarshal([]byte(s), &obj); err != nil {
+	if err := decodeSecretJSON(s, &obj); err != nil {
 		return nil, err
 	}
 	return obj, nil
+}
+
+// decodeSecretJSON decodes s the way json.Unmarshal would, but keeps numbers as their
+// digit strings.  Decoding into float64 merges integers above 2^53, so an edit from
+// 9007199254740992 to 9007199254740993 would compare equal and never plan.
+func decodeSecretJSON(s string, v interface{}) error {
+	dec := json.NewDecoder(strings.NewReader(s))
+	dec.UseNumber()
+	if err := dec.Decode(v); err != nil {
+		return err
+	}
+	if _, err := dec.Token(); err != io.EOF {
+		return errors.New("unexpected data after the JSON value")
+	}
+	return nil
 }
 
 func secretDataCompare(old, new string) (bool, error) {
@@ -487,7 +503,7 @@ func secretValueEqual(state, config interface{}) bool {
 	}
 	if s, ok := config.(string); ok {
 		var decoded interface{}
-		if err := json.Unmarshal([]byte(s), &decoded); err != nil {
+		if err := decodeSecretJSON(s, &decoded); err != nil {
 			return false
 		}
 		switch decoded.(type) {
