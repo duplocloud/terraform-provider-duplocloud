@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -90,10 +91,14 @@ func gcpBigtableInstanceSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IsUUID,
 		},
 		"name": {
-			Description: "The ID of the Bigtable instance. Used verbatim as the instance ID in GCP.",
-			Type:        schema.TypeString,
-			Required:    true,
-			ForceNew:    true,
+			Description: "The ID of the Bigtable instance. Used verbatim as the instance ID in GCP. " +
+				"Must be 6-33 characters of lowercase letters, digits and hyphens, starting with a letter " +
+				"and not ending with a hyphen.",
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9-]{4,31}[a-z0-9]$`),
+				"must be 6-33 characters of lowercase letters, digits and hyphens, start with a letter and not end with a hyphen"),
 		},
 		"instance_type": {
 			Description: "The type of the Bigtable instance. Must be one of `PRODUCTION` or `DEVELOPMENT`.",
@@ -555,7 +560,7 @@ func validateBigtableClusters(ctx context.Context, diff *schema.ResourceDiff, m 
 	oldRaw, _ := diff.GetChange("cluster")
 	newClusters := diff.Get("cluster").([]interface{})
 
-	if err := validateBigtableClusterBlocks(newClusters); err != nil {
+	if err := validateBigtableClusterBlocks(newClusters, bigtableUnknownNumNodes(diff.GetRawConfig())); err != nil {
 		return err
 	}
 	if err := validateBigtableScalingModes(diff.GetRawConfig()); err != nil {
@@ -575,9 +580,12 @@ func validateBigtableClusters(ctx context.Context, diff *schema.ResourceDiff, m 
 //     which GCP enforces as a hard limit. Each bound is checked to be positive by its
 //     own ValidateFunc, and an unknown bound reads as 0 here, so these are only
 //     checked once both are known.
-func validateBigtableClusterBlocks(clusters []interface{}) error {
+//
+// unknownNumNodes holds the indexes of clusters whose num_nodes is not known yet. The
+// flattened diff reads such a value as 0, so the node-count check waits for it.
+func validateBigtableClusterBlocks(clusters []interface{}, unknownNumNodes map[int]bool) error {
 	seen := map[string]bool{}
-	for _, raw := range clusters {
+	for i, raw := range clusters {
 		cfg := raw.(map[string]interface{})
 		id := cfg["cluster_id"].(string)
 		if seen[id] {
@@ -588,7 +596,7 @@ func validateBigtableClusterBlocks(clusters []interface{}) error {
 		ac, _ := cfg["autoscaling_config"].([]interface{})
 		hasAutoscaling := len(ac) > 0
 		numNodes := cfg["num_nodes"].(int)
-		if !hasAutoscaling && numNodes <= 0 {
+		if !hasAutoscaling && numNodes <= 0 && !unknownNumNodes[i] {
 			return fmt.Errorf("cluster %q: either 'num_nodes' (> 0) or 'autoscaling_config' must be set", id)
 		}
 		if hasAutoscaling && ac[0] != nil {
@@ -604,6 +612,28 @@ func validateBigtableClusterBlocks(clusters []interface{}) error {
 		}
 	}
 	return nil
+}
+
+// bigtableUnknownNumNodes returns the indexes of the configured clusters whose num_nodes
+// is set to a value not known until apply, such as one taken from another resource.
+// num_nodes is Computed, so only the raw configuration tells that apart from unset.
+func bigtableUnknownNumNodes(config cty.Value) map[int]bool {
+	out := map[int]bool{}
+	if config.IsNull() || !config.IsKnown() || !config.Type().IsObjectType() || !config.Type().HasAttribute("cluster") {
+		return out
+	}
+	clusters := config.GetAttr("cluster")
+	if clusters.IsNull() || !clusters.IsKnown() || !clusters.CanIterateElements() {
+		return out
+	}
+	i := 0
+	for it := clusters.ElementIterator(); it.Next(); i++ {
+		_, cl := it.Element()
+		if !cl.IsNull() && cl.IsKnown() && !cl.GetAttr("num_nodes").IsKnown() {
+			out[i] = true
+		}
+	}
+	return out
 }
 
 // validateBigtableScalingModes rejects a cluster that configures both num_nodes and

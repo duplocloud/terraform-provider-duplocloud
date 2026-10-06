@@ -66,7 +66,7 @@ resource "duplocloud_gcp_bigtable_instance" "bigtable-autoscale" {
 ### Required
 
 - `cluster` (Block List, Min: 1) The clusters that belong to the Bigtable instance. At least one cluster is required. Clusters are matched to the backend by `cluster_id`; list them in a stable order, as reordering the blocks in configuration produces a diff. (see [below for nested schema](#nestedblock--cluster))
-- `name` (String) The ID of the Bigtable instance. Used verbatim as the instance ID in GCP.
+- `name` (String) The ID of the Bigtable instance. Used verbatim as the instance ID in GCP. Must be 6-33 characters of lowercase letters, digits and hyphens, starting with a letter and not ending with a hyphen.
 - `tenant_id` (String) GUID of the tenant the Bigtable instance will be created in.
 
 ### Optional

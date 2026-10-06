@@ -43,7 +43,7 @@ func TestValidateBigtableClusterBlocks_DuplicateClusterID_Rejected(t *testing.T)
 	err := validateBigtableClusterBlocks([]interface{}{
 		bigtableManualCluster("c1", "us-east1-b", 3),
 		bigtableManualCluster("c1", "us-east1-c", 3),
-	})
+	}, nil)
 
 	assert.ErrorContains(t, err, "duplicate cluster_id")
 }
@@ -51,7 +51,7 @@ func TestValidateBigtableClusterBlocks_DuplicateClusterID_Rejected(t *testing.T)
 func TestValidateBigtableClusterBlocks_NoNodesAndNoAutoscaling_Rejected(t *testing.T) {
 	err := validateBigtableClusterBlocks([]interface{}{
 		bigtableManualCluster("c1", "us-east1-b", 0),
-	})
+	}, nil)
 
 	assert.ErrorContains(t, err, "either 'num_nodes' (> 0) or 'autoscaling_config' must be set")
 }
@@ -59,7 +59,7 @@ func TestValidateBigtableClusterBlocks_NoNodesAndNoAutoscaling_Rejected(t *testi
 func TestValidateBigtableClusterBlocks_AutoscalingMaxBelowMin_Rejected(t *testing.T) {
 	err := validateBigtableClusterBlocks([]interface{}{
 		bigtableAutoscaledCluster("c1", "us-east1-b", 5, 2),
-	})
+	}, nil)
 
 	assert.ErrorContains(t, err, "'max_nodes' (2) must be greater than or equal to 'min_nodes' (5)")
 }
@@ -67,7 +67,7 @@ func TestValidateBigtableClusterBlocks_AutoscalingMaxBelowMin_Rejected(t *testin
 func TestValidateBigtableClusterBlocks_AutoscalingEqualBounds_Accepted(t *testing.T) {
 	err := validateBigtableClusterBlocks([]interface{}{
 		bigtableAutoscaledCluster("c1", "us-east1-b", 3, 3),
-	})
+	}, nil)
 
 	assert.NoError(t, err)
 }
@@ -86,7 +86,7 @@ func TestValidateBigtableClusterBlocks_Valid_Accepted(t *testing.T) {
 	err := validateBigtableClusterBlocks([]interface{}{
 		bigtableManualCluster("c1", "us-east1-b", 3),
 		bigtableAutoscaledCluster("c2", "us-east1-c", 1, 5),
-	})
+	}, nil)
 
 	assert.NoError(t, err)
 }
@@ -172,10 +172,10 @@ func TestBigtableInstanceUpdateRequest_EmptyLabelsAreSent(t *testing.T) {
 func TestValidateBigtableClusterBlocks_AutoscalingMaxOverTenTimesMin_Rejected(t *testing.T) {
 	err := validateBigtableClusterBlocks([]interface{}{
 		bigtableAutoscaledCluster("c1", "us-east1-b", 1, 11),
-	})
+	}, nil)
 
 	assert.ErrorContains(t, err, "cannot be more than 10 times 'min_nodes' (1)")
-	assert.NoError(t, validateBigtableClusterBlocks([]interface{}{bigtableAutoscaledCluster("c1", "us-east1-b", 1, 10)}))
+	assert.NoError(t, validateBigtableClusterBlocks([]interface{}{bigtableAutoscaledCluster("c1", "us-east1-b", 1, 10)}, nil))
 }
 
 func bigtableClusterWithStorageTarget(target int) map[string]interface{} {
@@ -312,6 +312,37 @@ func TestBigtableDisplayName_LengthValidated(t *testing.T) {
 	}
 	for _, v := range []string{"abcd", "abcdefghij-abcdefghij-abcdefgh"} {
 		_, errs := validate(v, "display_name")
+		assert.Empty(t, errs, v)
+	}
+}
+
+// A num_nodes taken from a value known only at apply reads as 0 in the flattened diff,
+// so the node-count check waits for it rather than rejecting the plan.
+func TestValidateBigtableClusterBlocks_UnknownNumNodes_Deferred(t *testing.T) {
+	clusters := []interface{}{bigtableManualCluster("c1", "us-east1-b", 0)}
+
+	assert.NoError(t, validateBigtableClusterBlocks(clusters, map[int]bool{0: true}))
+	assert.Error(t, validateBigtableClusterBlocks(clusters, nil))
+}
+
+func TestBigtableUnknownNumNodes(t *testing.T) {
+	unknown := bigtableUnknownNumNodes(bigtableRawConfig(
+		map[string]cty.Value{"cluster_id": cty.StringVal("c1"), "zone": cty.StringVal("us-east1-b"), "num_nodes": cty.NumberIntVal(3)},
+		map[string]cty.Value{"cluster_id": cty.StringVal("c2"), "zone": cty.StringVal("us-east1-c"), "num_nodes": cty.UnknownVal(cty.Number)},
+		map[string]cty.Value{"cluster_id": cty.StringVal("c3"), "zone": cty.StringVal("us-east1-d")},
+	))
+
+	assert.Equal(t, map[int]bool{1: true}, unknown)
+}
+
+func TestBigtableInstanceName_Validated(t *testing.T) {
+	validate := gcpBigtableInstanceSchema()["name"].ValidateFunc
+	for _, v := range []string{"abc", "abcde", "1abcdef", "Abcdef", "abcdef-", "abc_def", "abcdefghij-abcdefghij-abcdefghij-a"} {
+		_, errs := validate(v, "name")
+		assert.NotEmpty(t, errs, v)
+	}
+	for _, v := range []string{"abcdef", "my-bigtable-1", "abcdefghij-abcdefghij-abcdefghij"} {
+		_, errs := validate(v, "name")
 		assert.Empty(t, errs, v)
 	}
 }
