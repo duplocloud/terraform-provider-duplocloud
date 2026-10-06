@@ -346,3 +346,20 @@ func TestBigtableInstanceName_Validated(t *testing.T) {
 		assert.Empty(t, errs, v)
 	}
 }
+
+func TestBigtableInstanceTypeChangeNeedsRecreate(t *testing.T) {
+	assert.True(t, bigtableInstanceTypeChangeNeedsRecreate("PRODUCTION", "DEVELOPMENT"), "downgrade")
+	assert.False(t, bigtableInstanceTypeChangeNeedsRecreate("DEVELOPMENT", "PRODUCTION"), "upgrade")
+}
+
+func TestBigtableClusterID_Validated(t *testing.T) {
+	validate := gcpBigtableClusterSchema()["cluster_id"].ValidateFunc
+	for _, v := range []string{"abcde", "1abcdef", "abcdef-", "abc/def", "abc?def", "abcdefghij-abcdefghij-abcdefghi"} {
+		_, errs := validate(v, "cluster_id")
+		assert.NotEmpty(t, errs, v)
+	}
+	for _, v := range []string{"abcdef", "my-cluster-c1", "abcdefghij-abcdefghij-abcdefgh"} {
+		_, errs := validate(v, "cluster_id")
+		assert.Empty(t, errs, v)
+	}
+}

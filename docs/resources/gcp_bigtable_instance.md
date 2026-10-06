@@ -72,7 +72,7 @@ resource "duplocloud_gcp_bigtable_instance" "bigtable-autoscale" {
 ### Optional
 
 - `display_name` (String) The human-readable display name of the Bigtable instance (4-30 characters). Defaults to `name`, cut to 30 characters.
-- `instance_type` (String) The type of the Bigtable instance. Must be one of `PRODUCTION` or `DEVELOPMENT`. Defaults to `PRODUCTION`.
+- `instance_type` (String) The type of the Bigtable instance. Must be one of `PRODUCTION` or `DEVELOPMENT`. A `DEVELOPMENT` instance is upgraded to `PRODUCTION` in place; changing `PRODUCTION` to `DEVELOPMENT` forces a new instance, since GCP cannot downgrade one. Defaults to `PRODUCTION`.
 - `labels` (Map of String) Resource labels for user-provided metadata.
 - `storage_type` (String) Storage type for the instance's clusters. Must be one of `SSD` or `HDD`. All clusters in a Bigtable instance share the same storage type, and GCP does not allow changing it after creation; changing this forces a new instance. Defaults to `SSD`.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
@@ -88,7 +88,7 @@ resource "duplocloud_gcp_bigtable_instance" "bigtable-autoscale" {
 
 Required:
 
-- `cluster_id` (String) The ID of the Bigtable cluster.
+- `cluster_id` (String) The ID of the Bigtable cluster. Must be 6-30 characters of lowercase letters, digits and hyphens, starting with a letter and not ending with a hyphen.
 - `zone` (String) The zone in which the cluster runs (e.g. `us-east1-b`).
 
 Optional:

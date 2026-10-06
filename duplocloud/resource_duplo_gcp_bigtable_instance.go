@@ -21,9 +21,12 @@ import (
 func gcpBigtableClusterSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"cluster_id": {
-			Description: "The ID of the Bigtable cluster.",
-			Type:        schema.TypeString,
-			Required:    true,
+			Description: "The ID of the Bigtable cluster. Must be 6-30 characters of lowercase letters, digits " +
+				"and hyphens, starting with a letter and not ending with a hyphen.",
+			Type:     schema.TypeString,
+			Required: true,
+			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9-]{4,28}[a-z0-9]$`),
+				"must be 6-30 characters of lowercase letters, digits and hyphens, start with a letter and not end with a hyphen"),
 		},
 		"zone": {
 			Description: "The zone in which the cluster runs (e.g. `us-east1-b`).",
@@ -101,10 +104,12 @@ func gcpBigtableInstanceSchema() map[string]*schema.Schema {
 				"must be 6-33 characters of lowercase letters, digits and hyphens, start with a letter and not end with a hyphen"),
 		},
 		"instance_type": {
-			Description: "The type of the Bigtable instance. Must be one of `PRODUCTION` or `DEVELOPMENT`.",
-			Type:        schema.TypeString,
-			Optional:    true,
-			Default:     "PRODUCTION",
+			Description: "The type of the Bigtable instance. Must be one of `PRODUCTION` or `DEVELOPMENT`. " +
+				"A `DEVELOPMENT` instance is upgraded to `PRODUCTION` in place; changing `PRODUCTION` to " +
+				"`DEVELOPMENT` forces a new instance, since GCP cannot downgrade one.",
+			Type:     schema.TypeString,
+			Optional: true,
+			Default:  "PRODUCTION",
 			ValidateFunc: validation.StringInSlice([]string{
 				"PRODUCTION", "DEVELOPMENT",
 			}, false),
@@ -182,7 +187,7 @@ func resourceGcpBigtableInstance() *schema.Resource {
 			Delete: schema.DefaultTimeout(20 * time.Minute),
 		},
 		Schema:        gcpBigtableInstanceSchema(),
-		CustomizeDiff: validateBigtableClusters,
+		CustomizeDiff: customizeGcpBigtableInstanceDiff,
 	}
 }
 
@@ -552,6 +557,25 @@ func expandGcpBigtableCluster(cfg map[string]interface{}, storageType int) *dupl
 		cl.ServeNodes = cfg["num_nodes"].(int)
 	}
 	return cl
+}
+
+func customizeGcpBigtableInstanceDiff(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	if diff.Id() != "" && diff.HasChange("instance_type") {
+		o, n := diff.GetChange("instance_type")
+		if bigtableInstanceTypeChangeNeedsRecreate(o.(string), n.(string)) {
+			if err := diff.ForceNew("instance_type"); err != nil {
+				return err
+			}
+		}
+	}
+	return validateBigtableClusters(ctx, diff, m)
+}
+
+// bigtableInstanceTypeChangeNeedsRecreate reports whether an instance_type change cannot
+// be applied in place. GCP upgrades a DEVELOPMENT instance to PRODUCTION in place, but
+// has no way to downgrade a PRODUCTION instance.
+func bigtableInstanceTypeChangeNeedsRecreate(old, new string) bool {
+	return old == "PRODUCTION" && new == "DEVELOPMENT"
 }
 
 // validateBigtableClusters validates the cluster blocks at plan time. The
