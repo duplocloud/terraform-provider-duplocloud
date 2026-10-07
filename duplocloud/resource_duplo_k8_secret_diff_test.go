@@ -270,3 +270,47 @@ func TestSecretDataCompare_NumbersMatchByValue(t *testing.T) {
 		assert.Equal(t, tc.equal, equal, "%s vs %s", tc.state, tc.config)
 	}
 }
+
+// A configured scalar number is stored as the backend's spelling of it, so the state
+// string is compared against that spelling rather than the configured text.
+func TestNewtonsoftNumberString(t *testing.T) {
+	for in, want := range map[string]string{
+		"1":                      "1",
+		"-0":                     "0",
+		"9007199254740993":       "9007199254740993",
+		"1.0":                    "1.0",
+		"1.50":                   "1.5",
+		"1e3":                    "1000.0",
+		"-2.5E1":                 "-25.0",
+		"0.1":                    "0.1",
+		"0.0001":                 "0.0001",
+		"0.00001":                "1E-05",
+		"1e15":                   "1E+15",
+		"123456789012345.0":      "123456789012345.0",
+		"123456789012345.6":      "123456789012345.59",
+		"0.30000000000000004":    "0.30000000000000004",
+		"1.7976931348623157e308": "1.7976931348623157E+308",
+		"-0.0":                   "0.0",
+	} {
+		assert.Equal(t, want, newtonsoftNumberString(json.Number(in)), in)
+	}
+}
+
+func TestSecretDataCompare_ScalarNumberMatchesStoredSpelling(t *testing.T) {
+	for _, tc := range []struct {
+		state, config string
+		equal         bool
+	}{
+		{`{"x":"1.5"}`, `{"x":1.50}`, true},
+		{`{"x":"1000.0"}`, `{"x":1e3}`, true},
+		{`{"x":"1"}`, `{"x":1}`, true},
+		{`{"x":"1"}`, `{"x":1.0}`, false},
+		{`{"x":"1.0"}`, `{"x":1}`, false},
+		{`{"x":"1.50"}`, `{"x":1.5}`, false},
+		{`{"x":"9007199254740992"}`, `{"x":9007199254740993}`, false},
+	} {
+		equal, err := secretDataCompare(tc.state, tc.config)
+		assert.NoError(t, err)
+		assert.Equal(t, tc.equal, equal, "%s vs %s", tc.state, tc.config)
+	}
+}

@@ -10,6 +10,7 @@ import (
 	"maps"
 	"math/big"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -571,6 +572,9 @@ func secretDataCompare(old, new string) (bool, error) {
 // object or array - a scalar is never decoded by the backend, so 1 and "1" stay distinct.
 func secretValueEqual(state, config interface{}) bool {
 	if _, ok := state.(string); ok {
+		if n, ok := config.(json.Number); ok {
+			return state == newtonsoftNumberString(n)
+		}
 		return state == fmt.Sprintf("%v", config)
 	}
 	if s, ok := config.(string); ok {
@@ -584,6 +588,74 @@ func secretValueEqual(state, config interface{}) bool {
 		}
 	}
 	return secretJSONEqual(state, config)
+}
+
+// newtonsoftNumberString returns the text the backend stores for a configured scalar
+// number.  The backend (net48, Newtonsoft 13) parses an integer literal as a long or
+// BigInteger and writes its digits back, and any other number as a double, which it writes
+// with .NET Framework's "R" format plus a ".0" when that has no decimal point or exponent.
+// So 1.50 is stored as 1.5 and 1e3 as 1000.0, while 1 and 1.0 stay different strings.
+func newtonsoftNumberString(n json.Number) string {
+	s := string(n)
+	if !strings.ContainsAny(s, ".eE") {
+		if i, ok := new(big.Int).SetString(s, 10); ok {
+			return i.String()
+		}
+		return s
+	}
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return s
+	}
+	if f == 0 {
+		// .NET Framework prints negative zero as "0".
+		return "0.0"
+	}
+	text := netFrameworkGeneral(f, 15)
+	if back, err := strconv.ParseFloat(text, 64); err != nil || back != f {
+		text = netFrameworkGeneral(f, 17)
+	}
+	if strings.ContainsAny(text, ".E") {
+		return text
+	}
+	return text + ".0"
+}
+
+// netFrameworkGeneral formats f the way .NET's "G" format does at the given precision:
+// trailing zeros dropped, fixed-point while the decimal exponent is above -5 and below the
+// precision, and otherwise scientific with a signed exponent of at least two digits.
+func netFrameworkGeneral(f float64, precision int) string {
+	e := strconv.FormatFloat(f, 'e', precision-1, 64)
+	sign := ""
+	if e[0] == '-' {
+		sign, e = "-", e[1:]
+	}
+	mantissa, expText, _ := strings.Cut(e, "e")
+	exp, _ := strconv.Atoi(expText)
+	digits := strings.TrimRight(strings.Replace(mantissa, ".", "", 1), "0")
+	if digits == "" {
+		digits = "0"
+	}
+
+	if exp > -5 && exp < precision {
+		if exp < 0 {
+			return sign + "0." + strings.Repeat("0", -exp-1) + digits
+		}
+		if len(digits) <= exp+1 {
+			return sign + digits + strings.Repeat("0", exp+1-len(digits))
+		}
+		return sign + digits[:exp+1] + "." + digits[exp+1:]
+	}
+
+	out := digits[:1]
+	if len(digits) > 1 {
+		out += "." + digits[1:]
+	}
+	expSign := "+"
+	if exp < 0 {
+		expSign, exp = "-", -exp
+	}
+	return fmt.Sprintf("%s%sE%s%02d", sign, out, expSign, exp)
 }
 
 // secretJSONEqual compares two decoded JSON values, matching numbers by value rather than
