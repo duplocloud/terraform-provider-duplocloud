@@ -658,10 +658,12 @@ func netFrameworkGeneral(f float64, precision int) string {
 	return fmt.Sprintf("%s%sE%s%02d", sign, out, expSign, exp)
 }
 
-// secretJSONEqual compares two decoded JSON values, matching numbers by value rather than
-// spelling.  The backend round-trips a decoded value through Newtonsoft, which can rewrite
-// 1e3 as 1000.0 or 1.50 as 1.5, so comparing the digit strings would plan on every run.
-// big.Rat holds each number exactly, so integers above 2^53 still stay distinct.
+// secretJSONEqual compares two decoded JSON values, matching each number by the spelling
+// the backend would write for it.  The backend round-trips a decoded value through
+// Newtonsoft, which rewrites 1e3 as 1000.0, 1.50 as 1.5 and 0.10000000000000001 as 0.1,
+// so comparing the configured digits would plan on every run.  State already holds the
+// backend's spelling, so this matches exactly what an apply would read back: integers
+// above 2^53 stay distinct, and 1 and 1.0 differ just as the backend returns them.
 func secretJSONEqual(a, b interface{}) bool {
 	switch av := a.(type) {
 	case map[string]interface{}:
@@ -689,12 +691,7 @@ func secretJSONEqual(a, b interface{}) bool {
 		return true
 	case json.Number:
 		bv, ok := b.(json.Number)
-		if !ok {
-			return false
-		}
-		x, okA := new(big.Rat).SetString(string(av))
-		y, okB := new(big.Rat).SetString(string(bv))
-		return okA && okB && x.Cmp(y) == 0
+		return ok && newtonsoftNumberString(av) == newtonsoftNumberString(bv)
 	default:
 		return a == b
 	}

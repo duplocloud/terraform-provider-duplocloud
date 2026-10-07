@@ -251,16 +251,19 @@ func TestSecretDataCompare_UnchangedLargeIntegerFromBackendMatches(t *testing.T)
 	assert.True(t, equal)
 }
 
-// The backend can respell a number inside a decoded value, so numbers are matched by
-// value: 1e3 and 1000.0 are the same, while large integers still differ.
-func TestSecretDataCompare_NumbersMatchByValue(t *testing.T) {
+// The backend respells a number inside a decoded value, so numbers are matched by the
+// spelling it would read back: 1e3 and 1000.0 are the same, as are two decimals that parse
+// to one double, while large integers and 1 against 1.0 still differ.
+func TestSecretDataCompare_NumbersMatchByStoredSpelling(t *testing.T) {
 	for _, tc := range []struct {
 		state, config string
 		equal         bool
 	}{
 		{`{"k":{"n":1000.0}}`, `{"k":"{\"n\":1e3}"}`, true},
 		{`{"k":{"n":1.5}}`, `{"k":"{\"n\":1.50}"}`, true},
-		{`{"k":[1,2.0]}`, `{"k":"[1.0,2]"}`, true},
+		{`{"k":[1,2.0]}`, `{"k":"[1,2.00]"}`, true},
+		{`{"k":[1,2.0]}`, `{"k":"[1.0,2]"}`, false},
+		{`{"k":{"n":0.1}}`, `{"k":"{\"n\":0.10000000000000001}"}`, true},
 		{`{"k":{"n":1000}}`, `{"k":"{\"n\":1001}"}`, false},
 		{`{"k":{"n":9007199254740992}}`, `{"k":"{\"n\":9007199254740993}"}`, false},
 		{`{"k":{"n":1}}`, `{"k":"{\"n\":\"1\"}"}`, false},
