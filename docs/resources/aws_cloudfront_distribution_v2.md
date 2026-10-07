@@ -184,8 +184,8 @@ Optional:
 - `realtime_log_config_arn` (String)
 - `response_headers_policy_id` (String)
 - `smooth_streaming` (Boolean)
-- `trusted_key_groups` (List of String)
-- `trusted_signers` (List of String)
+- `trusted_key_groups` (Set of String)
+- `trusted_signers` (Set of String)
 
 <a id="nestedblock--default_cache_behavior--forwarded_values"></a>
 ### Nested Schema for `default_cache_behavior.forwarded_values`
@@ -353,8 +353,8 @@ Optional:
 - `realtime_log_config_arn` (String)
 - `response_headers_policy_id` (String)
 - `smooth_streaming` (Boolean)
-- `trusted_key_groups` (List of String)
-- `trusted_signers` (List of String)
+- `trusted_key_groups` (Set of String)
+- `trusted_signers` (Set of String)
 
 <a id="nestedblock--ordered_cache_behavior--forwarded_values"></a>
 ### Nested Schema for `ordered_cache_behavior.forwarded_values`

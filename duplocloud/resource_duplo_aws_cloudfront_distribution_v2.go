@@ -594,16 +594,22 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 						Required: true,
 					},
 					"trusted_key_groups": {
-						Type:     schema.TypeList,
+						Type:     schema.TypeSet,
 						Optional: true,
 						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"trusted_signers": {
-						Type:     schema.TypeList,
+						Type:     schema.TypeSet,
 						Optional: true,
 						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"viewer_protocol_policy": {
 						Type:     schema.TypeString,
@@ -789,16 +795,22 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 						Required: true,
 					},
 					"trusted_key_groups": {
-						Type:     schema.TypeList,
+						Type:     schema.TypeSet,
 						Optional: true,
 						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"trusted_signers": {
-						Type:     schema.TypeList,
+						Type:     schema.TypeSet,
 						Optional: true,
 						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"viewer_protocol_policy": {
 						Type:     schema.TypeString,

@@ -651,16 +651,22 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						Required: true,
 					},
 					"trusted_key_groups": {
-						Type:     schema.TypeList,
+						Type:     schema.TypeSet,
 						Optional: true,
 						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"trusted_signers": {
-						Type:     schema.TypeList,
+						Type:     schema.TypeSet,
 						Optional: true,
 						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"viewer_protocol_policy": {
 						Type:     schema.TypeString,
@@ -846,16 +852,22 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						Required: true,
 					},
 					"trusted_key_groups": {
-						Type:     schema.TypeList,
+						Type:     schema.TypeSet,
 						Optional: true,
 						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"trusted_signers": {
-						Type:     schema.TypeList,
+						Type:     schema.TypeSet,
 						Optional: true,
 						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"viewer_protocol_policy": {
 						Type:     schema.TypeString,
@@ -1172,13 +1184,13 @@ func expandAwsCloudfrontDistributionDefaultCacheBehavior(m map[string]interface{
 	}
 
 	if v, ok := m["trusted_key_groups"]; ok {
-		dcb.TrustedKeyGroups = expandTrustedKeyGroups(v.([]interface{}))
+		dcb.TrustedKeyGroups = expandTrustedKeyGroups(v.(*schema.Set).List())
 	} else {
 		dcb.TrustedKeyGroups = expandTrustedKeyGroups([]interface{}{})
 	}
 
 	if v, ok := m["trusted_signers"]; ok {
-		dcb.TrustedSigners = expandTrustedSigners(v.([]interface{}))
+		dcb.TrustedSigners = expandTrustedSigners(v.(*schema.Set).List())
 	} else {
 		dcb.TrustedSigners = expandTrustedSigners([]interface{}{})
 	}
@@ -1244,13 +1256,13 @@ func expandAwsCloudfrontDistributionCacheBehavior(m map[string]interface{}) dupl
 	}
 
 	if v, ok := m["trusted_key_groups"]; ok {
-		cb.TrustedKeyGroups = expandTrustedKeyGroups(v.([]interface{}))
+		cb.TrustedKeyGroups = expandTrustedKeyGroups(v.(*schema.Set).List())
 	} else {
 		cb.TrustedKeyGroups = expandTrustedKeyGroups([]interface{}{})
 	}
 
 	if v, ok := m["trusted_signers"]; ok {
-		cb.TrustedSigners = expandTrustedSigners(v.([]interface{}))
+		cb.TrustedSigners = expandTrustedSigners(v.(*schema.Set).List())
 	} else {
 		cb.TrustedSigners = expandTrustedSigners([]interface{}{})
 	}
