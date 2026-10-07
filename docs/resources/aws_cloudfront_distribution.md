@@ -169,8 +169,8 @@ Optional:
 - `realtime_log_config_arn` (String)
 - `response_headers_policy_id` (String)
 - `smooth_streaming` (Boolean)
-- `trusted_key_groups` (List of String)
-- `trusted_signers` (List of String)
+- `trusted_key_groups` (Set of String) IDs of the CloudFront key groups allowed to sign URLs and cookies for this behavior. If omitted, the key groups already on the behavior are kept, unless `trusted_signers` is set to at least one value, which turns them off. Set to `[]` to turn key groups off. Cannot be set together with `trusted_signers`; CloudFront rejects the request.
+- `trusted_signers` (Set of String) AWS account IDs (or `self`) allowed to sign URLs and cookies for this behavior. If omitted, the signers already on the behavior are kept, unless `trusted_key_groups` is set to at least one value, which turns them off. Set to `[]` to turn trusted signers off. Cannot be set together with `trusted_key_groups`; CloudFront rejects the request.
 
 <a id="nestedblock--default_cache_behavior--forwarded_values"></a>
 ### Nested Schema for `default_cache_behavior.forwarded_values`
@@ -347,8 +347,8 @@ Optional:
 - `realtime_log_config_arn` (String)
 - `response_headers_policy_id` (String)
 - `smooth_streaming` (Boolean)
-- `trusted_key_groups` (List of String)
-- `trusted_signers` (List of String)
+- `trusted_key_groups` (Set of String) IDs of the CloudFront key groups allowed to sign URLs and cookies for this behavior. If omitted, the key groups already on the behavior are kept, unless `trusted_signers` is set to at least one value, which turns them off. Set to `[]` to turn key groups off. Cannot be set together with `trusted_signers`; CloudFront rejects the request.
+- `trusted_signers` (Set of String) AWS account IDs (or `self`) allowed to sign URLs and cookies for this behavior. If omitted, the signers already on the behavior are kept, unless `trusted_key_groups` is set to at least one value, which turns them off. Set to `[]` to turn trusted signers off. Cannot be set together with `trusted_key_groups`; CloudFront rejects the request.
 
 <a id="nestedblock--ordered_cache_behavior--forwarded_values"></a>
 ### Nested Schema for `ordered_cache_behavior.forwarded_values`

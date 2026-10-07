@@ -2,11 +2,13 @@ package duplocloud
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func Test_expandTrustedKeyGroups(t *testing.T) {
@@ -474,5 +476,84 @@ func Test_suppressViewerCertificateManagedByAws(t *testing.T) {
 				t.Errorf("expected %v, got %v", c.expected, actual)
 			}
 		})
+	}
+}
+
+func Test_trustAttributesAreSets(t *testing.T) {
+	schemas := map[string]map[string]*schema.Schema{
+		"v1": duploAwsCloudfrontDistributionSchema(),
+		"v2": duploAwsCloudfrontDistributionSchemaV2(),
+	}
+	for name, s := range schemas {
+		t.Run(name, func(t *testing.T) {
+			d := schema.TestResourceDataRaw(t, s, map[string]interface{}{
+				"default_cache_behavior": []interface{}{map[string]interface{}{
+					"target_origin_id":       "o1",
+					"viewer_protocol_policy": "redirect-to-https",
+					"trusted_key_groups":     []interface{}{"kg-b", "kg-a", "kg-a"},
+					"trusted_signers":        []interface{}{"222233334444", "111122223333"},
+				}},
+			})
+
+			dcb := expandAwsCloudfrontDistributionDefaultCacheBehavior(d.Get("default_cache_behavior").([]interface{})[0].(map[string]interface{}))
+			if dcb.TrustedKeyGroups.Quantity != 2 || len(dcb.TrustedKeyGroups.Items) != 2 {
+				t.Errorf("expected duplicate key groups to collapse to 2, got %+v", dcb.TrustedKeyGroups)
+			}
+			if dcb.TrustedSigners.Quantity != 2 {
+				t.Errorf("expected 2 trusted signers, got %+v", dcb.TrustedSigners)
+			}
+
+			// AWS reads the items back in its own order; that must equal the configured set.
+			configured := d.Get("default_cache_behavior.0.trusted_key_groups").(*schema.Set)
+			err := d.Set("default_cache_behavior", []interface{}{map[string]interface{}{
+				"target_origin_id":       "o1",
+				"viewer_protocol_policy": "redirect-to-https",
+				"trusted_key_groups":     flattenTrustedKeyGroups(&duplosdk.DuploCFDTrustedKeyGroups{Items: []string{"kg-a", "kg-b"}}),
+			}})
+			if err != nil {
+				t.Fatalf("unexpected error setting state: %v", err)
+			}
+			read := d.Get("default_cache_behavior.0.trusted_key_groups").(*schema.Set)
+			if !read.Equal(configured) {
+				t.Errorf("expected read-back %v to equal configured %v", read.List(), configured.List())
+			}
+		})
+	}
+}
+
+func Test_trustAttributesRejectEmptyString(t *testing.T) {
+	resources := map[string]*schema.Resource{
+		"v1": resourceAwsCloudfrontDistribution(),
+		"v2": resourceAwsCloudfrontDistributionV2(),
+	}
+	for name, r := range resources {
+		for _, block := range []string{"default_cache_behavior", "ordered_cache_behavior"} {
+			for _, attr := range []string{"trusted_key_groups", "trusted_signers"} {
+				t.Run(name+"/"+block+"/"+attr, func(t *testing.T) {
+					behavior := map[string]interface{}{
+						"target_origin_id":       "o1",
+						"viewer_protocol_policy": "redirect-to-https",
+						"allowed_methods":        []interface{}{"GET", "HEAD"},
+						"cached_methods":         []interface{}{"GET", "HEAD"},
+						attr:                     []interface{}{""},
+					}
+					if block == "ordered_cache_behavior" {
+						behavior["path_pattern"] = "/img/*"
+					}
+					diags := r.Validate(terraform.NewResourceConfigRaw(map[string]interface{}{
+						block: []interface{}{behavior},
+					}))
+					found := false
+					for _, diag := range diags {
+						if len(diag.AttributePath) > 0 && strings.Contains(diag.Detail+diag.Summary, "empty") {
+							found = true
+						}
+					}
+					if !found {
+						t.Errorf("expected an empty-string validation error for %s.%s, got %+v", block, attr, diags)
+					}
+				})
+			}
+		}
 	}
 }
