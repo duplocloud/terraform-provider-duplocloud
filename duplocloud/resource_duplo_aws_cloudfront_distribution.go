@@ -651,7 +651,7 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						Required: true,
 					},
 					"trusted_key_groups": {
-						Description: "IDs of the CloudFront key groups allowed to sign URLs and cookies for this behavior. If omitted, the key groups already on the behavior are kept, unless `trusted_signers` is set, which turns them off. Set to `[]` to turn key groups off. Cannot be set together with `trusted_signers`; CloudFront rejects the request.",
+						Description: "IDs of the CloudFront key groups allowed to sign URLs and cookies for this behavior. If omitted, the key groups already on the behavior are kept, unless `trusted_signers` is set to at least one value, which turns them off. Set to `[]` to turn key groups off. Cannot be set together with `trusted_signers`; CloudFront rejects the request.",
 						Type:        schema.TypeSet,
 						Optional:    true,
 						Computed:    true,
@@ -661,7 +661,7 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						},
 					},
 					"trusted_signers": {
-						Description: "AWS account IDs (or `self`) allowed to sign URLs and cookies for this behavior. If omitted, the signers already on the behavior are kept, unless `trusted_key_groups` is set, which turns them off. Set to `[]` to turn trusted signers off. Cannot be set together with `trusted_key_groups`; CloudFront rejects the request.",
+						Description: "AWS account IDs (or `self`) allowed to sign URLs and cookies for this behavior. If omitted, the signers already on the behavior are kept, unless `trusted_key_groups` is set to at least one value, which turns them off. Set to `[]` to turn trusted signers off. Cannot be set together with `trusted_key_groups`; CloudFront rejects the request.",
 						Type:        schema.TypeSet,
 						Optional:    true,
 						Computed:    true,
@@ -854,7 +854,7 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						Required: true,
 					},
 					"trusted_key_groups": {
-						Description: "IDs of the CloudFront key groups allowed to sign URLs and cookies for this behavior. If omitted, the key groups already on the behavior are kept, unless `trusted_signers` is set, which turns them off. Set to `[]` to turn key groups off. Cannot be set together with `trusted_signers`; CloudFront rejects the request.",
+						Description: "IDs of the CloudFront key groups allowed to sign URLs and cookies for this behavior. If omitted, the key groups already on the behavior are kept, unless `trusted_signers` is set to at least one value, which turns them off. Set to `[]` to turn key groups off. Cannot be set together with `trusted_signers`; CloudFront rejects the request.",
 						Type:        schema.TypeSet,
 						Optional:    true,
 						Computed:    true,
@@ -864,7 +864,7 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						},
 					},
 					"trusted_signers": {
-						Description: "AWS account IDs (or `self`) allowed to sign URLs and cookies for this behavior. If omitted, the signers already on the behavior are kept, unless `trusted_key_groups` is set, which turns them off. Set to `[]` to turn trusted signers off. Cannot be set together with `trusted_key_groups`; CloudFront rejects the request.",
+						Description: "AWS account IDs (or `self`) allowed to sign URLs and cookies for this behavior. If omitted, the signers already on the behavior are kept, unless `trusted_key_groups` is set to at least one value, which turns them off. Set to `[]` to turn trusted signers off. Cannot be set together with `trusted_key_groups`; CloudFront rejects the request.",
 						Type:        schema.TypeSet,
 						Optional:    true,
 						Computed:    true,
