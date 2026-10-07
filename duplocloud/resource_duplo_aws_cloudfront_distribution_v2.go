@@ -594,18 +594,20 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 						Required: true,
 					},
 					"trusted_key_groups": {
-						Type:     schema.TypeSet,
-						Optional: true,
-						Computed: true,
+						Description: "IDs of the CloudFront key groups allowed to sign URLs and cookies for this behavior. If omitted, the key groups already on the behavior are kept, unless `trusted_signers` is set, which turns them off. Set to `[]` to turn key groups off. Cannot be set together with `trusted_signers`; CloudFront rejects the request.",
+						Type:        schema.TypeSet,
+						Optional:    true,
+						Computed:    true,
 						Elem: &schema.Schema{
 							Type:         schema.TypeString,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 					},
 					"trusted_signers": {
-						Type:     schema.TypeSet,
-						Optional: true,
-						Computed: true,
+						Description: "AWS account IDs (or `self`) allowed to sign URLs and cookies for this behavior. If omitted, the signers already on the behavior are kept, unless `trusted_key_groups` is set, which turns them off. Set to `[]` to turn trusted signers off. Cannot be set together with `trusted_key_groups`; CloudFront rejects the request.",
+						Type:        schema.TypeSet,
+						Optional:    true,
+						Computed:    true,
 						Elem: &schema.Schema{
 							Type:         schema.TypeString,
 							ValidateFunc: validation.StringIsNotEmpty,
@@ -795,18 +797,20 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 						Required: true,
 					},
 					"trusted_key_groups": {
-						Type:     schema.TypeSet,
-						Optional: true,
-						Computed: true,
+						Description: "IDs of the CloudFront key groups allowed to sign URLs and cookies for this behavior. If omitted, the key groups already on the behavior are kept, unless `trusted_signers` is set, which turns them off. Set to `[]` to turn key groups off. Cannot be set together with `trusted_signers`; CloudFront rejects the request.",
+						Type:        schema.TypeSet,
+						Optional:    true,
+						Computed:    true,
 						Elem: &schema.Schema{
 							Type:         schema.TypeString,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
 					},
 					"trusted_signers": {
-						Type:     schema.TypeSet,
-						Optional: true,
-						Computed: true,
+						Description: "AWS account IDs (or `self`) allowed to sign URLs and cookies for this behavior. If omitted, the signers already on the behavior are kept, unless `trusted_key_groups` is set, which turns them off. Set to `[]` to turn trusted signers off. Cannot be set together with `trusted_key_groups`; CloudFront rejects the request.",
+						Type:        schema.TypeSet,
+						Optional:    true,
+						Computed:    true,
 						Elem: &schema.Schema{
 							Type:         schema.TypeString,
 							ValidateFunc: validation.StringIsNotEmpty,
