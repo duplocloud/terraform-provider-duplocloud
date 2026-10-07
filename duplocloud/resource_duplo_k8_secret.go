@@ -573,7 +573,7 @@ func secretDataCompare(old, new string) (bool, error) {
 func secretValueEqual(state, config interface{}) bool {
 	if _, ok := state.(string); ok {
 		if n, ok := config.(json.Number); ok {
-			return state == newtonsoftNumberString(n)
+			return newtonsoftNumberMatches(state.(string), n)
 		}
 		return state == fmt.Sprintf("%v", config)
 	}
@@ -615,6 +615,31 @@ func newtonsoftNumberString(n json.Number) string {
 	if back, err := strconv.ParseFloat(text, 64); err != nil || back != f {
 		text = netFrameworkGeneral(f, 17)
 	}
+	return withDecimalPlace(text)
+}
+
+// newtonsoftNumberMatches reports whether stored, a number as the backend wrote it, is
+// what the backend would write for the configured n.  The "R" format decides between 15
+// and 17 digits by parsing the 15-digit text back, and .NET Framework's parser gets that
+// wrong for some values on x64 - 0.84551240822557006 is written as 0.84551240822557 - so
+// the 15-digit spelling is accepted as well as the correctly rounded one.
+func newtonsoftNumberMatches(stored string, n json.Number) bool {
+	if stored == newtonsoftNumberString(n) {
+		return true
+	}
+	if !strings.ContainsAny(string(n), ".eE") {
+		return false
+	}
+	f, err := strconv.ParseFloat(string(n), 64)
+	if err != nil || f == 0 {
+		return false
+	}
+	return stored == withDecimalPlace(netFrameworkGeneral(f, 15))
+}
+
+// withDecimalPlace adds the ".0" Newtonsoft appends to a double written without a decimal
+// point or exponent.
+func withDecimalPlace(text string) string {
 	if strings.ContainsAny(text, ".E") {
 		return text
 	}
@@ -658,8 +683,8 @@ func netFrameworkGeneral(f float64, precision int) string {
 	return fmt.Sprintf("%s%sE%s%02d", sign, out, expSign, exp)
 }
 
-// secretJSONEqual compares two decoded JSON values, matching each number by the spelling
-// the backend would write for it.  The backend round-trips a decoded value through
+// secretJSONEqual compares a decoded state value a against a decoded configured value b,
+// matching each configured number by the spelling the backend would write for it.  The backend round-trips a decoded value through
 // Newtonsoft, which rewrites 1e3 as 1000.0, 1.50 as 1.5 and 0.10000000000000001 as 0.1,
 // so comparing the configured digits would plan on every run.  State already holds the
 // backend's spelling, so this matches exactly what an apply would read back: integers
@@ -691,7 +716,7 @@ func secretJSONEqual(a, b interface{}) bool {
 		return true
 	case json.Number:
 		bv, ok := b.(json.Number)
-		return ok && newtonsoftNumberString(av) == newtonsoftNumberString(bv)
+		return ok && newtonsoftNumberMatches(string(av), bv)
 	default:
 		return a == b
 	}
