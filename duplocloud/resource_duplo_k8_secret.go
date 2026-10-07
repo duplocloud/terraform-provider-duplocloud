@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"maps"
 	"regexp"
 	"strings"
 	"time"
@@ -114,7 +115,7 @@ func resourceK8Secret() *schema.Resource {
 				return []*schema.ResourceData{d}, nil
 			},
 		},
-		CustomizeDiff: validateK8sSecretDataManagement,
+		CustomizeDiff: customizeK8SecretDiff,
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(15 * time.Minute),
 			Update: schema.DefaultTimeout(15 * time.Minute),
@@ -146,7 +147,9 @@ func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	manage := manageK8sSecretData(d)
+	configured, _ := d.Get("secret_annotations").(map[string]interface{})
 	flattenK8sSecret(d, rp, !manage)
+	d.Set("secret_annotations", k8sSecretAnnotationsForState(configured, rp.SecretAnnotations))
 	d.Set("manage_secret_data", manage)
 
 	log.Printf("[TRACE] resourceK8SecretRead(%s, %s): end", tenantId, name)
@@ -306,6 +309,75 @@ func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret, ma
 	d.Set("secret_labels", op)
 	log.Printf("[TRACE] flattenK8sSecret(%s, %s): flattened %d key(s)", duplo.TenantID, duplo.SecretName, len(duplo.SecretData))
 
+}
+
+const k8sSecretSkipEncodingAnnotation = "duplocloud.net/skip-encoding"
+
+// k8sSecretAnnotationsForState reconciles the skip-encoding annotation with the
+// configuration.  The backend rewrites it as bool.ToString() on every update, which adds
+// "False" to a secret that never had it and turns a configured "true" into "True".  An
+// unconfigured "false" is dropped, since it is what the backend backfills and means the
+// same as no annotation; any other unconfigured value stays, so removing an enabled
+// skip-encoding still plans.  The configured spelling is kept when the two agree ignoring
+// case, which is how the backend parses it.  Neither changes the secret.
+func k8sSecretAnnotationsForState(configured map[string]interface{}, backend map[string]string) map[string]string {
+	annotations := make(map[string]string, len(backend))
+	for k, v := range backend {
+		annotations[k] = v
+	}
+	want, ok := configured[k8sSecretSkipEncodingAnnotation].(string)
+	if !ok {
+		if strings.EqualFold(annotations[k8sSecretSkipEncodingAnnotation], "false") {
+			delete(annotations, k8sSecretSkipEncodingAnnotation)
+		}
+	} else if got, ok := annotations[k8sSecretSkipEncodingAnnotation]; ok && strings.EqualFold(got, want) {
+		annotations[k8sSecretSkipEncodingAnnotation] = want
+	}
+	return annotations
+}
+
+// suppressK8sSecretSkipEncodingDrift clears a secret_annotations change that only Read's
+// reconciliation would have hidden.  Read judges ownership of the annotation by d.Get,
+// which during a refresh is prior state, so state written before that reconciliation
+// existed still holds the backend's value and keeps planning its removal.  The raw
+// configuration is authoritative here, so the same reconciliation is applied against it.
+func suppressK8sSecretSkipEncodingDrift(diff *schema.ResourceDiff) error {
+	if !diff.HasChange("secret_annotations") {
+		return nil
+	}
+	config := diff.GetRawConfig()
+	if config.IsNull() || !config.IsKnown() || !config.Type().IsObjectType() || !config.Type().HasAttribute("secret_annotations") {
+		return nil
+	}
+	v := config.GetAttr("secret_annotations")
+	if v.IsNull() || !v.IsWhollyKnown() {
+		return nil
+	}
+	configured := map[string]interface{}{}
+	want := map[string]string{}
+	for k, e := range v.AsValueMap() {
+		if e.IsNull() {
+			continue
+		}
+		configured[k] = e.AsString()
+		want[k] = e.AsString()
+	}
+	o, _ := diff.GetChange("secret_annotations")
+	backend := map[string]string{}
+	for k, e := range o.(map[string]interface{}) {
+		backend[k], _ = e.(string)
+	}
+	if maps.Equal(k8sSecretAnnotationsForState(configured, backend), want) {
+		return diff.Clear("secret_annotations")
+	}
+	return nil
+}
+
+func customizeK8SecretDiff(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	if err := suppressK8sSecretSkipEncodingDrift(diff); err != nil {
+		return err
+	}
+	return validateK8sSecretDataManagement(ctx, diff, m)
 }
 
 func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
