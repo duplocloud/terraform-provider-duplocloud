@@ -720,7 +720,7 @@ func reduceOtherDockerConfig(defn map[string]interface{}) error {
 	}
 
 	// Handle probe entries.
-	probes := []string{"LivenessProbe", "ReadinessProbe"}
+	probes := []string{"LivenessProbe", "ReadinessProbe", "StartupProbe"}
 	for _, pk := range probes {
 		if pv, ok := defn[pk]; ok {
 			if probe, ok := pv.(map[string]interface{}); ok {
@@ -744,6 +744,7 @@ func reduceOtherDockerConfig(defn map[string]interface{}) error {
 		if list, ok := v.([]interface{}); ok {
 			for _, item := range list {
 				if entry, ok := item.(map[string]interface{}); ok {
+					makeMapUpperCamelCase(entry)
 					reduceNilOrEmptyMapEntries(entry)
 
 					// Reduce ValueFrom keys.
@@ -770,6 +771,26 @@ func reduceOtherDockerConfig(defn map[string]interface{}) error {
 							reduceNilOrEmptyMapEntries(vf)
 						}
 					}
+				}
+			}
+		}
+	}
+
+	// Handle envFrom entries.
+	if v, ok := defn["EnvFrom"]; ok {
+		if list, ok := v.([]interface{}); ok {
+			for _, item := range list {
+				if entry, ok := item.(map[string]interface{}); ok {
+					makeMapUpperCamelCase(entry)
+
+					for _, refKey := range []string{"SecretRef", "ConfigMapRef"} {
+						if ref, ok := entry[refKey].(map[string]interface{}); ok {
+							makeMapUpperCamelCase(ref)
+							reduceNilOrEmptyMapEntries(ref)
+						}
+					}
+
+					reduceNilOrEmptyMapEntries(entry)
 				}
 			}
 		}
