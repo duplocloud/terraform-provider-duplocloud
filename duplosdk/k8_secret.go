@@ -1,6 +1,8 @@
 package duplosdk
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -15,6 +17,17 @@ type DuploK8sSecret struct {
 	SecretData        map[string]interface{} `json:"SecretData"`
 	SecretAnnotations map[string]string      `json:"SecretAnnotations,omitempty"`
 	SecretLabels      map[string]string      `json:"SecretLabels,omitempty"`
+}
+
+// UnmarshalJSON keeps the numbers in SecretData as their digit strings.  The backend
+// decodes a value that looks like a JSON object or array, so a secret can hold integers
+// above 2^53, which a float64 would round - and the rounded value would then differ from
+// the configured one on every plan.
+func (s *DuploK8sSecret) UnmarshalJSON(b []byte) error {
+	type plain DuploK8sSecret
+	dec := json.NewDecoder(bytes.NewReader(b))
+	dec.UseNumber()
+	return dec.Decode((*plain)(s))
 }
 
 // K8SecretGetList retrieves a list of k8s secrets via the Duplo API.
