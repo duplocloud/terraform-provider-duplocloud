@@ -46,6 +46,14 @@ type CustomError struct {
 	response map[string]interface{}
 }
 
+// Error returns the message CustomError was built with.  Without this the method
+// promoted from the embedded clientError wins, and that one reads the embedded struct's
+// message field, which NewCustomError never sets - so every CustomError rendered as an
+// empty string.
+func (e CustomError) Error() string {
+	return e.message
+}
+
 func (e CustomError) Status() int {
 	return e.status
 }

@@ -141,18 +141,18 @@ resource "duplocloud_azure_cosmos_db_account" "account" {
 - `id` (String) The ID of this resource.
 - `locations` (String) An array that contains the georeplication locations enabled for the Cosmos DB account.
 - `primary_master_key` (String, Sensitive) The primary key for the CosmosDB account.
-- `primary_mongo_connection_string` (String) The primary MongoDB connection string for the CosmosDB account.
+- `primary_mongo_connection_string` (String, Sensitive) The primary MongoDB connection string for the CosmosDB account.
 - `primary_readonly_master_key` (String, Sensitive) The primary readonly key for the CosmosDB account.
-- `primary_readonly_mongo_connection_string` (String) The primary readonly MongoDB connection string for the CosmosDB account.
-- `primary_readonly_sql_connection_string` (String) The primary readonly SQL connection string for the CosmosDB account.
-- `primary_sql_connection_string` (String) The primary SQL connection string for the CosmosDB account.
+- `primary_readonly_mongo_connection_string` (String, Sensitive) The primary readonly MongoDB connection string for the CosmosDB account.
+- `primary_readonly_sql_connection_string` (String, Sensitive) The primary readonly SQL connection string for the CosmosDB account.
+- `primary_sql_connection_string` (String, Sensitive) The primary SQL connection string for the CosmosDB account.
 - `read_endpoints` (List of String) The list of read endpoints for the CosmosDB account.
 - `secondary_master_key` (String, Sensitive) The secondary key for the CosmosDB account.
-- `secondary_mongo_connection_string` (String) The secondary MongoDB connection string for the CosmosDB account.
+- `secondary_mongo_connection_string` (String, Sensitive) The secondary MongoDB connection string for the CosmosDB account.
 - `secondary_readonly_master_key` (String, Sensitive) The secondary readonly key for the CosmosDB account.
-- `secondary_readonly_mongo_connection_string` (String) The secondary readonly MongoDB connection string for the CosmosDB account.
-- `secondary_readonly_sql_connection_string` (String) The secondary readonly SQL connection string for the CosmosDB account.
-- `secondary_sql_connection_string` (String) The secondary SQL connection string for the CosmosDB account.
+- `secondary_readonly_mongo_connection_string` (String, Sensitive) The secondary readonly MongoDB connection string for the CosmosDB account.
+- `secondary_readonly_sql_connection_string` (String, Sensitive) The secondary readonly SQL connection string for the CosmosDB account.
+- `secondary_sql_connection_string` (String, Sensitive) The secondary SQL connection string for the CosmosDB account.
 - `write_endpoints` (List of String) The list of write endpoints for the CosmosDB account.
 
 <a id="nestedblock--geo_location"></a>

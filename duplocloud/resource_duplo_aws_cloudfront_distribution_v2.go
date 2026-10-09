@@ -173,14 +173,16 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 						Computed: true,
 					},
 					"minimum_protocol_version": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Default:  "TLSv1.2_2021",
+						Type:             schema.TypeString,
+						Optional:         true,
+						Default:          "TLSv1.2_2021",
+						DiffSuppressFunc: suppressViewerCertificateManagedByAws,
 					},
 					"ssl_support_method": {
-						Type:     schema.TypeString,
-						Optional: true,
-						Default:  "sni-only",
+						Type:             schema.TypeString,
+						Optional:         true,
+						Default:          "sni-only",
+						DiffSuppressFunc: suppressViewerCertificateManagedByAws,
 						ValidateFunc: validation.StringInSlice([]string{
 							"vip",
 							"sni-only",
@@ -976,6 +978,7 @@ func resourceAwsCloudfrontDistributionV2Update(ctx context.Context, d *schema.Re
 	rq.Comment = d.Get("fullname").(string)
 	// Preserve OAI and OAC from existing config, as these are managed by the backend
 	updateS3OAI(duplo.Distribution.DistributionConfig, rq)
+	preserveUnmanagedTrust(d, duplo.Distribution.DistributionConfig, rq)
 	resp, err := c.AwsCloudfrontDistributionUpdateV2(tenantID, &duplosdk.DuploAwsCloudfrontDistributionCreateV2{
 		Id:                   cfdId,
 		DistributionConfig:   rq,

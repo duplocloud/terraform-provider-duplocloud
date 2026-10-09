@@ -60,19 +60,19 @@ output "out" {
  Allowed Account Kind : GlobalDocumentDB, MongoDB, Parse
 - `locations` (String) An array that contains the georeplication locations enabled for the Cosmos DB account.
 - `primary_master_key` (String, Sensitive) The primary key for the CosmosDB account.
-- `primary_mongo_connection_string` (String) The primary MongoDB connection string for the CosmosDB account.
+- `primary_mongo_connection_string` (String, Sensitive) The primary MongoDB connection string for the CosmosDB account.
 - `primary_readonly_master_key` (String, Sensitive) The primary readonly key for the CosmosDB account.
-- `primary_readonly_mongo_connection_string` (String) The primary readonly MongoDB connection string for the CosmosDB account.
-- `primary_readonly_sql_connection_string` (String) The primary readonly SQL connection string for the CosmosDB account.
-- `primary_sql_connection_string` (String) The primary SQL connection string for the CosmosDB account.
+- `primary_readonly_mongo_connection_string` (String, Sensitive) The primary readonly MongoDB connection string for the CosmosDB account.
+- `primary_readonly_sql_connection_string` (String, Sensitive) The primary readonly SQL connection string for the CosmosDB account.
+- `primary_sql_connection_string` (String, Sensitive) The primary SQL connection string for the CosmosDB account.
 - `public_network_access` (String) Flag to indicate whether to enable/disable public network access.
 - `read_endpoints` (List of String) The list of read endpoints for the CosmosDB account.
 - `secondary_master_key` (String, Sensitive) The secondary key for the CosmosDB account.
-- `secondary_mongo_connection_string` (String) The secondary MongoDB connection string for the CosmosDB account.
+- `secondary_mongo_connection_string` (String, Sensitive) The secondary MongoDB connection string for the CosmosDB account.
 - `secondary_readonly_master_key` (String, Sensitive) The secondary readonly key for the CosmosDB account.
-- `secondary_readonly_mongo_connection_string` (String) The secondary readonly MongoDB connection string for the CosmosDB account.
-- `secondary_readonly_sql_connection_string` (String) The secondary readonly SQL connection string for the CosmosDB account.
-- `secondary_sql_connection_string` (String) The secondary SQL connection string for the CosmosDB account.
+- `secondary_readonly_mongo_connection_string` (String, Sensitive) The secondary readonly MongoDB connection string for the CosmosDB account.
+- `secondary_readonly_sql_connection_string` (String, Sensitive) The secondary readonly SQL connection string for the CosmosDB account.
+- `secondary_sql_connection_string` (String, Sensitive) The secondary SQL connection string for the CosmosDB account.
 - `type` (String) Specifies the  Cosmos DB account type.
 - `virtual_network_rule` (List of Object) A list of virtual network rules for the Cosmos DB account. This is used to define which subnets are allowed to access this CosmosDB account (see [below for nested schema](#nestedatt--virtual_network_rule))
 - `write_endpoints` (List of String) The list of write endpoints for the CosmosDB account.
