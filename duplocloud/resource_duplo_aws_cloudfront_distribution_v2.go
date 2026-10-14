@@ -58,7 +58,6 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 			Description: "The object that you want CloudFront to return (for example, index.html) when an end user requests the root URL.",
 			Type:        schema.TypeString,
 			Optional:    true,
-			Computed:    true,
 		},
 		"enabled": {
 			Description: "Whether the distribution is enabled to accept end user requests for content.",
@@ -1138,9 +1137,7 @@ func flattenAwsCloudfrontDistributionV2(d *schema.ResourceData, duplo *duplosdk.
 		d.Set("name", duplo.Comment)
 	}
 
-	if duplo.DefaultRootObject != "" {
-		d.Set("default_root_object", duplo.DefaultRootObject)
-	}
+	d.Set("default_root_object", duplo.DefaultRootObject)
 	if duplo.HttpVersion != nil {
 		d.Set("http_version", duplo.HttpVersion.Value)
 	}
