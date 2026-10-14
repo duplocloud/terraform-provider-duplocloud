@@ -479,6 +479,51 @@ func Test_suppressViewerCertificateManagedByAws(t *testing.T) {
 	}
 }
 
+func Test_suppressTTLWithCachePolicy(t *testing.T) {
+	cases := []struct {
+		name     string
+		ocb      []interface{}
+		key      string
+		expected bool
+	}{
+		{
+			name:     "cache policy suppresses",
+			ocb:      []interface{}{map[string]interface{}{"path_pattern": "/docs", "cache_policy_id": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad", "max_ttl": 2}},
+			key:      "ordered_cache_behavior.0.max_ttl",
+			expected: true,
+		},
+		{
+			name:     "no cache policy does not suppress",
+			ocb:      []interface{}{map[string]interface{}{"path_pattern": "/docs", "max_ttl": 2}},
+			key:      "ordered_cache_behavior.0.max_ttl",
+			expected: false,
+		},
+		{
+			name: "only the same behavior's cache policy counts",
+			ocb: []interface{}{
+				map[string]interface{}{"path_pattern": "/a", "cache_policy_id": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"},
+				map[string]interface{}{"path_pattern": "/b", "default_ttl": 5},
+			},
+			key:      "ordered_cache_behavior.1.default_ttl",
+			expected: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			for name, s := range map[string]map[string]*schema.Schema{
+				"v1": duploAwsCloudfrontDistributionSchema(),
+				"v2": duploAwsCloudfrontDistributionSchemaV2(),
+			} {
+				d := schema.TestResourceDataRaw(t, s, map[string]interface{}{"ordered_cache_behavior": c.ocb})
+				if actual := suppressTTLWithCachePolicy(c.key, "0", "2", d); actual != c.expected {
+					t.Errorf("%s: expected %v, got %v", name, c.expected, actual)
+				}
+			}
+		})
+	}
+}
+
 func Test_trustAttributesAreSets(t *testing.T) {
 	schemas := map[string]map[string]*schema.Schema{
 		"v1": duploAwsCloudfrontDistributionSchema(),
