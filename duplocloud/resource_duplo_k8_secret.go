@@ -5,8 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"maps"
+	"math/big"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -114,7 +118,7 @@ func resourceK8Secret() *schema.Resource {
 				return []*schema.ResourceData{d}, nil
 			},
 		},
-		CustomizeDiff: validateK8sSecretDataManagement,
+		CustomizeDiff: customizeK8SecretDiff,
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(15 * time.Minute),
 			Update: schema.DefaultTimeout(15 * time.Minute),
@@ -146,7 +150,9 @@ func resourceK8SecretRead(ctx context.Context, d *schema.ResourceData, m interfa
 	}
 
 	manage := manageK8sSecretData(d)
+	configured, _ := d.Get("secret_annotations").(map[string]interface{})
 	flattenK8sSecret(d, rp, !manage)
+	d.Set("secret_annotations", k8sSecretAnnotationsForState(configured, rp.SecretAnnotations))
 	d.Set("manage_secret_data", manage)
 
 	log.Printf("[TRACE] resourceK8SecretRead(%s, %s): end", tenantId, name)
@@ -308,6 +314,75 @@ func flattenK8sSecret(d *schema.ResourceData, duplo *duplosdk.DuploK8sSecret, ma
 
 }
 
+const k8sSecretSkipEncodingAnnotation = "duplocloud.net/skip-encoding"
+
+// k8sSecretAnnotationsForState reconciles the skip-encoding annotation with the
+// configuration.  The backend rewrites it as bool.ToString() on every update, which adds
+// "False" to a secret that never had it and turns a configured "true" into "True".  An
+// unconfigured "false" is dropped, since it is what the backend backfills and means the
+// same as no annotation; any other unconfigured value stays, so removing an enabled
+// skip-encoding still plans.  The configured spelling is kept when the two agree ignoring
+// case, which is how the backend parses it.  Neither changes the secret.
+func k8sSecretAnnotationsForState(configured map[string]interface{}, backend map[string]string) map[string]string {
+	annotations := make(map[string]string, len(backend))
+	for k, v := range backend {
+		annotations[k] = v
+	}
+	want, ok := configured[k8sSecretSkipEncodingAnnotation].(string)
+	if !ok {
+		if strings.EqualFold(annotations[k8sSecretSkipEncodingAnnotation], "false") {
+			delete(annotations, k8sSecretSkipEncodingAnnotation)
+		}
+	} else if got, ok := annotations[k8sSecretSkipEncodingAnnotation]; ok && strings.EqualFold(got, want) {
+		annotations[k8sSecretSkipEncodingAnnotation] = want
+	}
+	return annotations
+}
+
+// suppressK8sSecretSkipEncodingDrift clears a secret_annotations change that only Read's
+// reconciliation would have hidden.  Read judges ownership of the annotation by d.Get,
+// which during a refresh is prior state, so state written before that reconciliation
+// existed still holds the backend's value and keeps planning its removal.  The raw
+// configuration is authoritative here, so the same reconciliation is applied against it.
+func suppressK8sSecretSkipEncodingDrift(diff *schema.ResourceDiff) error {
+	if !diff.HasChange("secret_annotations") {
+		return nil
+	}
+	config := diff.GetRawConfig()
+	if config.IsNull() || !config.IsKnown() || !config.Type().IsObjectType() || !config.Type().HasAttribute("secret_annotations") {
+		return nil
+	}
+	v := config.GetAttr("secret_annotations")
+	if v.IsNull() || !v.IsWhollyKnown() {
+		return nil
+	}
+	configured := map[string]interface{}{}
+	want := map[string]string{}
+	for k, e := range v.AsValueMap() {
+		if e.IsNull() {
+			continue
+		}
+		configured[k] = e.AsString()
+		want[k] = e.AsString()
+	}
+	o, _ := diff.GetChange("secret_annotations")
+	backend := map[string]string{}
+	for k, e := range o.(map[string]interface{}) {
+		backend[k], _ = e.(string)
+	}
+	if maps.Equal(k8sSecretAnnotationsForState(configured, backend), want) {
+		return diff.Clear("secret_annotations")
+	}
+	return nil
+}
+
+func customizeK8SecretDiff(ctx context.Context, diff *schema.ResourceDiff, m interface{}) error {
+	if err := suppressK8sSecretSkipEncodingDrift(diff); err != nil {
+		return err
+	}
+	return validateK8sSecretDataManagement(ctx, diff, m)
+}
+
 func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 	duplo := duplosdk.DuploK8sSecret{
 		SecretName: d.Get("secret_name").(string),
@@ -359,7 +434,7 @@ func expandK8sSecret(d *schema.ResourceData) (*duplosdk.DuploK8sSecret, error) {
 			}
 		}
 		if data != "" {
-			err := json.Unmarshal([]byte(data), &duplo.SecretData)
+			err := decodeSecretJSON(data, &duplo.SecretData)
 			if err != nil {
 				return nil, err
 			}
@@ -448,10 +523,25 @@ func parseSecretData(s string) (map[string]interface{}, error) {
 	if s == "" {
 		return obj, nil
 	}
-	if err := json.Unmarshal([]byte(s), &obj); err != nil {
+	if err := decodeSecretJSON(s, &obj); err != nil {
 		return nil, err
 	}
 	return obj, nil
+}
+
+// decodeSecretJSON decodes s the way json.Unmarshal would, but keeps numbers as their
+// digit strings.  Decoding into float64 merges integers above 2^53, so an edit from
+// 9007199254740992 to 9007199254740993 would compare equal and never plan.
+func decodeSecretJSON(s string, v interface{}) error {
+	dec := json.NewDecoder(strings.NewReader(s))
+	dec.UseNumber()
+	if err := dec.Decode(v); err != nil {
+		return err
+	}
+	if _, err := dec.Token(); err != io.EOF {
+		return errors.New("unexpected data after the JSON value")
+	}
+	return nil
 }
 
 func secretDataCompare(old, new string) (bool, error) {
@@ -468,16 +558,168 @@ func secretDataCompare(old, new string) (bool, error) {
 		return false, nil
 	}
 	for k, v := range obj2 {
-		if v1, ok := obj1[k]; !ok {
+		if v1, ok := obj1[k]; !ok || !secretValueEqual(v1, v) {
 			return false, nil
-		} else {
-			s := fmt.Sprintf("%v", v)
-			if v1 != s {
-				return false, nil
-			}
 		}
 	}
 	return true, nil
+}
+
+// secretValueEqual compares one value held in state against the configured one.  The
+// backend decodes any value that looks like a JSON object or array before returning it,
+// so a dockerconfigjson secret comes back as an object while the configuration holds the
+// string it was written from.  Such a string is decoded before comparing, but only into an
+// object or array - a scalar is never decoded by the backend, so 1 and "1" stay distinct.
+func secretValueEqual(state, config interface{}) bool {
+	if _, ok := state.(string); ok {
+		if n, ok := config.(json.Number); ok {
+			return newtonsoftNumberMatches(state.(string), n)
+		}
+		return state == fmt.Sprintf("%v", config)
+	}
+	if s, ok := config.(string); ok {
+		var decoded interface{}
+		if err := decodeSecretJSON(s, &decoded); err != nil {
+			return false
+		}
+		switch decoded.(type) {
+		case map[string]interface{}, []interface{}:
+			config = decoded
+		}
+	}
+	return secretJSONEqual(state, config)
+}
+
+// newtonsoftNumberString returns the text the backend stores for a configured scalar
+// number.  The backend (net48, Newtonsoft 13) parses an integer literal as a long or
+// BigInteger and writes its digits back, and any other number as a double, which it writes
+// with .NET Framework's "R" format plus a ".0" when that has no decimal point or exponent.
+// So 1.50 is stored as 1.5 and 1e3 as 1000.0, while 1 and 1.0 stay different strings.
+func newtonsoftNumberString(n json.Number) string {
+	s := string(n)
+	if !strings.ContainsAny(s, ".eE") {
+		if i, ok := new(big.Int).SetString(s, 10); ok {
+			return i.String()
+		}
+		return s
+	}
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return s
+	}
+	if f == 0 {
+		// .NET Framework prints negative zero as "0".
+		return "0.0"
+	}
+	text := netFrameworkGeneral(f, 15)
+	if back, err := strconv.ParseFloat(text, 64); err != nil || back != f {
+		text = netFrameworkGeneral(f, 17)
+	}
+	return withDecimalPlace(text)
+}
+
+// newtonsoftNumberMatches reports whether stored, a number as the backend wrote it, is
+// what the backend would write for the configured n.  The "R" format decides between 15
+// and 17 digits by parsing the 15-digit text back, and .NET Framework's parser gets that
+// wrong for some values on x64 - 0.84551240822557006 is written as 0.84551240822557 - so
+// the 15-digit spelling is accepted as well as the correctly rounded one.
+func newtonsoftNumberMatches(stored string, n json.Number) bool {
+	if stored == newtonsoftNumberString(n) {
+		return true
+	}
+	if !strings.ContainsAny(string(n), ".eE") {
+		return false
+	}
+	f, err := strconv.ParseFloat(string(n), 64)
+	if err != nil || f == 0 {
+		return false
+	}
+	return stored == withDecimalPlace(netFrameworkGeneral(f, 15))
+}
+
+// withDecimalPlace adds the ".0" Newtonsoft appends to a double written without a decimal
+// point or exponent.
+func withDecimalPlace(text string) string {
+	if strings.ContainsAny(text, ".E") {
+		return text
+	}
+	return text + ".0"
+}
+
+// netFrameworkGeneral formats f the way .NET's "G" format does at the given precision:
+// trailing zeros dropped, fixed-point while the decimal exponent is above -5 and below the
+// precision, and otherwise scientific with a signed exponent of at least two digits.
+func netFrameworkGeneral(f float64, precision int) string {
+	e := strconv.FormatFloat(f, 'e', precision-1, 64)
+	sign := ""
+	if e[0] == '-' {
+		sign, e = "-", e[1:]
+	}
+	mantissa, expText, _ := strings.Cut(e, "e")
+	exp, _ := strconv.Atoi(expText)
+	digits := strings.TrimRight(strings.Replace(mantissa, ".", "", 1), "0")
+	if digits == "" {
+		digits = "0"
+	}
+
+	if exp > -5 && exp < precision {
+		if exp < 0 {
+			return sign + "0." + strings.Repeat("0", -exp-1) + digits
+		}
+		if len(digits) <= exp+1 {
+			return sign + digits + strings.Repeat("0", exp+1-len(digits))
+		}
+		return sign + digits[:exp+1] + "." + digits[exp+1:]
+	}
+
+	out := digits[:1]
+	if len(digits) > 1 {
+		out += "." + digits[1:]
+	}
+	expSign := "+"
+	if exp < 0 {
+		expSign, exp = "-", -exp
+	}
+	return fmt.Sprintf("%s%sE%s%02d", sign, out, expSign, exp)
+}
+
+// secretJSONEqual compares a decoded state value a against a decoded configured value b,
+// matching each configured number by the spelling the backend would write for it.  The backend round-trips a decoded value through
+// Newtonsoft, which rewrites 1e3 as 1000.0, 1.50 as 1.5 and 0.10000000000000001 as 0.1,
+// so comparing the configured digits would plan on every run.  State already holds the
+// backend's spelling, so this matches exactly what an apply would read back: integers
+// above 2^53 stay distinct, and 1 and 1.0 differ just as the backend returns them.
+func secretJSONEqual(a, b interface{}) bool {
+	switch av := a.(type) {
+	case map[string]interface{}:
+		bv, ok := b.(map[string]interface{})
+		if !ok || len(av) != len(bv) {
+			return false
+		}
+		for k, v := range av {
+			w, ok := bv[k]
+			if !ok || !secretJSONEqual(v, w) {
+				return false
+			}
+		}
+		return true
+	case []interface{}:
+		bv, ok := b.([]interface{})
+		if !ok || len(av) != len(bv) {
+			return false
+		}
+		for i := range av {
+			if !secretJSONEqual(av[i], bv[i]) {
+				return false
+			}
+		}
+		return true
+	case json.Number:
+		bv, ok := b.(json.Number)
+		return ok && newtonsoftNumberMatches(string(av), bv)
+	default:
+		return a == b
+	}
 }
 
 // k8sSecretRawAccessor is satisfied by both *schema.ResourceData and *schema.ResourceDiff.
