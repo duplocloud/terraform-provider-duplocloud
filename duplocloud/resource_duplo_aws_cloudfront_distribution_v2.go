@@ -113,10 +113,11 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 			Default:  true,
 		},
 		"use_origin_access_control": {
-			Description: `Duplo will create an origin access control (OAC) and restrict the S3 origin access. On false it will be public<br>For migration from OAI to OAC can be done from duplo cloud portal.`,
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     true,
+			Description:      `Duplo will create an origin access control (OAC) and restrict the S3 origin access. On false it will be public<br>For migration from OAI to OAC can be done from duplo cloud portal.`,
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Default:          true,
+			DiffSuppressFunc: suppressOACWithoutS3Origin,
 		},
 		"cors_allowed_host_names": {
 			Type:     schema.TypeList,
@@ -917,6 +918,22 @@ func cloudfrontS3BucketFullnameFromDomainName(domainName string) string {
 		return domainName[:idx]
 	}
 	return ""
+}
+
+// suppressOACWithoutS3Origin suppresses use_origin_access_control diffs when no
+// origin is an S3 bucket. OAC only applies to S3 origins, and Read infers the
+// value from them, so a custom-only distribution always reads back false.
+func suppressOACWithoutS3Origin(k, oldValue, newValue string, d *schema.ResourceData) bool {
+	for _, o := range d.Get("origin").(*schema.Set).List() {
+		origin, ok := o.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if domainName, _ := origin["domain_name"].(string); cloudfrontS3BucketFullnameFromDomainName(domainName) != "" {
+			return false
+		}
+	}
+	return true
 }
 
 func resourceAwsCloudfrontDistributionV2Create(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
