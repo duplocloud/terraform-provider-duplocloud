@@ -900,9 +900,11 @@ func resourceAwsCloudfrontDistributionV2Read(ctx context.Context, d *schema.Reso
 	// Read cors_allowed_host_names from the S3 origin bucket.
 	// The backend stores CORS settings on the bucket (not in CloudFront) and does not
 	// include them in the CloudFront GET response, so we fetch them directly from S3.
-	// Always set it, even when empty: a null value on this Computed list plans as
-	// "known after apply" on every run.
-	corsAllowedHostNames := []string{}
+	// An empty list is recorded when there are none: leaving the Optional+Computed
+	// attribute null makes every plan show it as "known after apply". Only a failed
+	// bucket lookup leaves the prior state alone.
+	corsHosts := []string{}
+	corsLookupFailed := false
 	if duplo.Distribution.DistributionConfig.Origins != nil && duplo.Distribution.DistributionConfig.Origins.Items != nil {
 		for _, origin := range *duplo.Distribution.DistributionConfig.Origins.Items {
 			bucketFullname := cloudfrontS3BucketFullnameFromDomainName(origin.DomainName)
@@ -912,15 +914,19 @@ func resourceAwsCloudfrontDistributionV2Read(ctx context.Context, d *schema.Reso
 			bucket, bucketErr := c.TenantGetV3S3Bucket(tenantID, bucketFullname)
 			if bucketErr != nil || bucket == nil {
 				log.Printf("[WARN] resourceAwsCloudfrontDistributionV2Read(%s, %s): could not retrieve S3 bucket %s for CORS: %v", tenantID, cfdId, bucketFullname, bucketErr)
+				corsLookupFailed = true
 				continue
 			}
 			if len(bucket.CorsAllowedHostNames) > 0 {
-				corsAllowedHostNames = bucket.CorsAllowedHostNames
+				corsHosts = bucket.CorsAllowedHostNames
 			}
+			corsLookupFailed = false
 			break
 		}
 	}
-	d.Set("cors_allowed_host_names", corsAllowedHostNames)
+	if !corsLookupFailed {
+		d.Set("cors_allowed_host_names", corsHosts)
+	}
 
 	log.Printf("[TRACE] resourceAwsCloudfrontDistributionRead(%s, %s): end", tenantID, cfdId)
 	return nil
