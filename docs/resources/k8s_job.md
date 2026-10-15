@@ -1562,7 +1562,7 @@ Optional:
 - `glusterfs` (Block List, Max: 1) Represents a Glusterfs volume that is attached to a host and exposed to the pod. Provisioned by an admin. More info: https://examples.k8s.io/volumes/glusterfs/README.md (see [below for nested schema](#nestedblock--spec--template--spec--volume--glusterfs))
 - `host_path` (Block List, Max: 1) Represents a directory on the host. Provisioned by a developer or tester. This is useful for single-node development and testing only! On-host storage is not supported in any way and WILL NOT WORK in a multi-node cluster. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath (see [below for nested schema](#nestedblock--spec--template--spec--volume--host_path))
 - `iscsi` (Block List, Max: 1) Represents an ISCSI Disk resource that is attached to a kubelet's host machine and then exposed to the pod. Provisioned by an admin. (see [below for nested schema](#nestedblock--spec--template--spec--volume--iscsi))
-- `local` (Block List, Max: 1) Represents a mounted local storage device such as a disk, partition or directory. Local volumes can only be used as a statically created PersistentVolume. Dynamic provisioning is not supported yet. More info: https://kubernetes.io/docs/concepts/storage/volumes#local (see [below for nested schema](#nestedblock--spec--template--spec--volume--local))
+- `local` (Block List, Max: 1, Deprecated) Represents a mounted local storage device such as a disk, partition or directory. Local volumes can only be used as a statically created PersistentVolume. Dynamic provisioning is not supported yet. More info: https://kubernetes.io/docs/concepts/storage/volumes#local. A local volume can only back a PersistentVolume, so this block is rejected on a pod volume. Use host_path, or reference a PersistentVolume through persistent_volume_claim. (see [below for nested schema](#nestedblock--spec--template--spec--volume--local))
 - `name` (String) Volume's name. Must be a DNS_LABEL and unique within the pod. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
 - `nfs` (Block List, Max: 1) Represents an NFS mount on the host. Provisioned by an admin. More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs (see [below for nested schema](#nestedblock--spec--template--spec--volume--nfs))
 - `persistent_volume_claim` (Block List, Max: 1) The specification of a persistent volume. (see [below for nested schema](#nestedblock--spec--template--spec--volume--persistent_volume_claim))
@@ -1614,7 +1614,7 @@ Required:
 Optional:
 
 - `read_only` (Boolean) Whether to force the read-only setting in VolumeMounts. Defaults to false (read/write).
-- `secret_namespace` (String) The namespace of the secret that contains Azure Storage Account Name and Key. For Kubernetes up to 1.18.x the default is the same as the Pod. For Kubernetes 1.19.x and later the default is "default" namespace.
+- `secret_namespace` (String, Deprecated) The namespace of the secret that contains Azure Storage Account Name and Key. For Kubernetes up to 1.18.x the default is the same as the Pod. For Kubernetes 1.19.x and later the default is "default" namespace. A secret namespace can only be set on a PersistentVolume, so this attribute is ignored on a pod volume. The secret is read from the pod's own namespace.
 
 
 <a id="nestedblock--spec--template--spec--volume--ceph_fs"></a>

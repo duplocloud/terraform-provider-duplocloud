@@ -79,6 +79,24 @@ type DuploRdsInstance struct {
 	IsAutoScalingEnabled               bool                    `json:"IsAutoScalingEnabled"`
 	MaxAllocatedStorage                int                     `json:"MaxAllocatedStorage"`
 	IsGlobalClusterMember              bool                    `json:"IsGlobalClusterMember"`
+
+	// Global database membership details reported by the backend. They are only
+	// read back (never sent on create), and let the read replica resource tell a
+	// global secondary cluster apart from a regular one before adding a reader.
+	GlobalClusterId         string `json:"GlobalClusterId,omitempty"`
+	GlobalClusterMemberRole string `json:"GlobalClusterMemberRole,omitempty"`
+	IsHeadlessCluster       bool   `json:"IsHeadlessCluster,omitempty"`
+}
+
+const (
+	RDS_GLOBAL_CLUSTER_ROLE_PRIMARY   = "primary"
+	RDS_GLOBAL_CLUSTER_ROLE_SECONDARY = "secondary"
+)
+
+// IsGlobalSecondaryCluster reports whether this record is the secondary cluster
+// of an Aurora global database, mirroring the backend's IsGlobalSecondaryCluster.
+func (r *DuploRdsInstance) IsGlobalSecondaryCluster() bool {
+	return r != nil && r.IsGlobalClusterMember && strings.EqualFold(r.GlobalClusterMemberRole, RDS_GLOBAL_CLUSTER_ROLE_SECONDARY)
 }
 
 type V2ScalingConfiguration struct {

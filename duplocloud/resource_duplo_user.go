@@ -71,8 +71,9 @@ func resourceUser() *schema.Resource {
 				Computed: true,
 			},
 			"current_session_token": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:      schema.TypeString,
+				Sensitive: true,
+				Computed:  true,
 			},
 			"permissions": {
 				Description: "The list of permissions assigned to the user.",

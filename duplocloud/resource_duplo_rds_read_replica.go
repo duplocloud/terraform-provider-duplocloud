@@ -22,7 +22,9 @@ import (
 func rdsReadReplicaSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"tenant_id": {
-			Description:  "The GUID of the tenant that the RDS read replica will be created in.",
+			Description: "The GUID of the tenant that the RDS read replica will be created in. " +
+				"This must be the tenant that owns the cluster: for the secondary cluster of an Aurora global database, " +
+				"use the secondary tenant (`secondary_tenant_id` of the `duplocloud_aws_rds_global_secondary` resource).",
 			Type:         schema.TypeString,
 			Required:     true,
 			ForceNew:     true, //switch tenant
@@ -47,9 +49,12 @@ func rdsReadReplicaSchema() map[string]*schema.Schema {
 			),
 		},
 		"cluster_identifier": {
-			Description: "The full name of the RDS Cluster.",
-			Type:        schema.TypeString,
-			Required:    true,
+			Description: "The full name of the RDS Cluster. " +
+				"This can also be the secondary cluster of an Aurora global database (`secondary_cluster` of the " +
+				"`duplocloud_aws_rds_global_secondary` resource), which adds a reader instance to that secondary cluster. " +
+				"The secondary cluster must not be in headless mode (`make_headless = false`).",
+			Type:     schema.TypeString,
+			Required: true,
 		},
 		"size": {
 			Description: "The type of the RDS read replica.\n" +
@@ -318,18 +323,26 @@ func resourceDuploRdsReadReplicaCreate(ctx context.Context, d *schema.ResourceDa
 	// Post the object to Duplo
 	c := m.(*duplosdk.Client)
 
-	// Get RDS writer instance
-	identifier := d.Get("cluster_identifier").(string)
-	idParts := strings.SplitN(identifier, "-cluster", 2)
-	name := strings.TrimPrefix(idParts[0], "duplo")
-	duploWriterInstance, err := c.RdsInstanceGetByName(tenantID, name)
+	// Look up the record the replica hangs off: the cluster's own record for a
+	// cluster, or the writer instance otherwise. For an Aurora global database
+	// secondary this is the secondary cluster's record in the secondary tenant.
+	identifier := strings.TrimSpace(d.Get("cluster_identifier").(string))
+	duploWriterInstance, err := c.RdsInstanceGetByName(tenantID, rdsClusterRecordName(identifier))
 	if err != nil {
+		return diag.Errorf("Error looking up RDS cluster '%s' in tenant %s for read replica '%s': %s", identifier, tenantID, duplo.Name, err)
+	}
+	if duploWriterInstance == nil {
+		return diag.Errorf("RDS cluster '%s' was not found in tenant %s. tenant_id must be the tenant that owns the cluster; "+
+			"for the secondary cluster of a global database that is the secondary tenant "+
+			"(secondary_tenant_id of the duplocloud_aws_rds_global_secondary resource)", identifier, tenantID)
+	}
+	if err := validateReadReplicaClusterTarget(duploWriterInstance, identifier); err != nil {
 		return diag.FromErr(err)
 	}
 	duplo.Identifier = duplo.Name
 	duplo.Engine = duploWriterInstance.Engine
 	duplo.Cloud = duploWriterInstance.Cloud
-	if strings.HasSuffix(identifier, "-cluster") {
+	if hasRdsClusterSuffix(identifier) {
 		duplo.ClusterIdentifier = identifier
 	} else {
 		duplo.ReplicationSourceIdentifier = identifier
@@ -809,4 +822,46 @@ func diffIgnoreDefaultParamaterGroupName(k, old, new string, d *schema.ResourceD
 		return true
 	}
 	return false
+}
+
+// rdsClusterRecordName derives the name of the Duplo RDS record that a
+// cluster_identifier refers to. A cluster identifier is its record's identifier
+// plus the "-cluster" suffix (the same invariant the backend relies on), while a
+// writer instance identifier is used as-is. Only a trailing suffix is stripped,
+// so a name that happens to contain "-cluster" in the middle stays intact.
+func rdsClusterRecordName(clusterIdentifier string) string {
+	name := strings.TrimSpace(clusterIdentifier)
+	if hasRdsClusterSuffix(name) {
+		name = name[:len(name)-len(rdsClusterSuffix)]
+	}
+	return name
+}
+
+const rdsClusterSuffix = "-cluster"
+
+// hasRdsClusterSuffix reports whether an identifier names a cluster rather than
+// a writer instance. The check is case-insensitive so that the record lookup
+// and the request classification in Create always agree.
+func hasRdsClusterSuffix(identifier string) bool {
+	if len(identifier) < len(rdsClusterSuffix) {
+		return false
+	}
+	return strings.EqualFold(identifier[len(identifier)-len(rdsClusterSuffix):], rdsClusterSuffix)
+}
+
+// validateReadReplicaClusterTarget rejects cluster targets that cannot take a
+// read replica. A global database secondary cluster in headless mode is held at
+// zero instances: the backend refuses the add (older backends silently skip the
+// instance and leave it stuck in "creating"), and the remedy is a change on the
+// duplocloud_aws_rds_global_secondary resource, so point the user there.
+func validateReadReplicaClusterTarget(cluster *duplosdk.DuploRdsInstance, clusterIdentifier string) error {
+	if cluster == nil {
+		return nil
+	}
+	if cluster.IsGlobalSecondaryCluster() && cluster.IsHeadlessCluster {
+		return fmt.Errorf("cannot add a read replica to '%s': it is the secondary cluster of global database '%s' and is in headless mode (zero instances). "+
+			"Set make_headless = false on its duplocloud_aws_rds_global_secondary resource and apply that first, then add the read replica",
+			clusterIdentifier, cluster.GlobalClusterId)
+	}
+	return nil
 }

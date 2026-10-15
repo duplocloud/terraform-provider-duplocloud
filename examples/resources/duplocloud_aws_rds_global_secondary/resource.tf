@@ -26,3 +26,13 @@ resource "duplocloud_aws_rds_global_secondary" "gs" {
   secondary_tenant_id = "a54598b1-0d8f-4a7b-ba7e-4a20f890a57d"
   region              = "us-east-2"
 }
+
+// Optional: additional reader instances on the secondary cluster. They live in
+// the secondary tenant and target the secondary cluster identifier. Readers can
+// only be added while make_headless is false.
+resource "duplocloud_rds_read_replica" "gs_reader" {
+  tenant_id          = duplocloud_aws_rds_global_secondary.gs.secondary_tenant_id
+  name               = "primarydb-dr-reader"
+  size               = "db.r7g.large"
+  cluster_identifier = duplocloud_aws_rds_global_secondary.gs.secondary_cluster
+}

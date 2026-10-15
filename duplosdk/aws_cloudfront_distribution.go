@@ -21,6 +21,7 @@ type DuploAwsCloudfrontDefaultCacheBehavior struct {
 	SmoothStreaming            bool                                          `json:"SmoothStreaming"`
 	TargetOriginId             string                                        `json:"TargetOriginId,omitempty"`
 	TrustedSigners             *DuploCFDTrustedSigners                       `json:"TrustedSigners,omitempty"`
+	TrustedKeyGroups           *DuploCFDTrustedKeyGroups                     `json:"TrustedKeyGroups,omitempty"`
 	ViewerProtocolPolicy       *DuploStringValue                             `json:"ViewerProtocolPolicy,omitempty"`
 	ForwardedValues            *DuploCFDForwardedValues                      `json:"ForwardedValues,omitempty"`
 	ResponseHeadersPolicyId    string                                        `json:"ResponseHeadersPolicyId,omitempty"`
@@ -41,6 +42,7 @@ type DuploAwsCloudfrontCacheBehavior struct {
 	SmoothStreaming            bool                                          `json:"SmoothStreaming"`
 	TargetOriginId             string                                        `json:"TargetOriginId"`
 	TrustedSigners             *DuploCFDTrustedSigners                       `json:"TrustedSigners,omitempty"`
+	TrustedKeyGroups           *DuploCFDTrustedKeyGroups                     `json:"TrustedKeyGroups,omitempty"`
 	ViewerProtocolPolicy       *DuploStringValue                             `json:"ViewerProtocolPolicy,omitempty"`
 	ForwardedValues            *DuploCFDForwardedValues                      `json:"ForwardedValues,omitempty"`
 	PathPattern                string                                        `json:"PathPattern"`
@@ -97,6 +99,12 @@ type DuploCFDForwardedValues struct {
 }
 
 type DuploCFDTrustedSigners struct {
+	Enabled  bool     `json:"Enabled"`
+	Items    []string `json:"Items"`
+	Quantity int      `json:"Quantity"`
+}
+
+type DuploCFDTrustedKeyGroups struct {
 	Enabled  bool     `json:"Enabled"`
 	Items    []string `json:"Items"`
 	Quantity int      `json:"Quantity"`

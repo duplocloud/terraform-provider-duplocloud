@@ -926,6 +926,70 @@ func expandPodSpecVolumes(volumes []interface{}) ([]v1.Volume, error) {
 				vol.Projected = obj
 			}
 		}
+
+		// Sources shared with persistent volumes. Leaving any of these out makes
+		// the volume reach the API with no source at all, which Kubernetes then
+		// defaults to `emptyDir: {}`.
+		if vmp, ok := mp["host_path"].([]interface{}); ok {
+			vol.HostPath = expandHostPathVolumeSource(vmp)
+		}
+		if vmp, ok := mp["aws_elastic_block_store"].([]interface{}); ok {
+			vol.AWSElasticBlockStore = expandAWSElasticBlockStoreVolumeSource(vmp)
+		}
+		if vmp, ok := mp["azure_disk"].([]interface{}); ok {
+			vol.AzureDisk = expandAzureDiskVolumeSource(vmp)
+		}
+		if vmp, ok := mp["azure_file"].([]interface{}); ok {
+			vol.AzureFile = expandAzureFileVolumeSource(vmp)
+		}
+		if vmp, ok := mp["ceph_fs"].([]interface{}); ok {
+			vol.CephFS = expandCephFSVolumeSource(vmp)
+		}
+		if vmp, ok := mp["cinder"].([]interface{}); ok {
+			vol.Cinder = expandCinderVolumeSource(vmp)
+		}
+		if vmp, ok := mp["fc"].([]interface{}); ok {
+			vol.FC = expandFCVolumeSource(vmp)
+		}
+		if vmp, ok := mp["flex_volume"].([]interface{}); ok {
+			vol.FlexVolume = expandFlexVolumeSource(vmp)
+		}
+		if vmp, ok := mp["flocker"].([]interface{}); ok {
+			vol.Flocker = expandFlockerVolumeSource(vmp)
+		}
+		if vmp, ok := mp["gce_persistent_disk"].([]interface{}); ok {
+			vol.GCEPersistentDisk = expandGCEPersistentDiskVolumeSource(vmp)
+		}
+		if vmp, ok := mp["glusterfs"].([]interface{}); ok {
+			vol.Glusterfs = expandGlusterfsVolumeSource(vmp)
+		}
+		if vmp, ok := mp["iscsi"].([]interface{}); ok {
+			vol.ISCSI = expandISCSIVolumeSource(vmp)
+		}
+		if vmp, ok := mp["nfs"].([]interface{}); ok {
+			vol.NFS = expandNFSVolumeSource(vmp)
+		}
+		if vmp, ok := mp["photon_persistent_disk"].([]interface{}); ok {
+			vol.PhotonPersistentDisk = expandPhotonPersistentDiskVolumeSource(vmp)
+		}
+		if vmp, ok := mp["quobyte"].([]interface{}); ok {
+			vol.Quobyte = expandQuobyteVolumeSource(vmp)
+		}
+		if vmp, ok := mp["rbd"].([]interface{}); ok {
+			vol.RBD = expandRBDVolumeSource(vmp)
+		}
+		if vmp, ok := mp["vsphere_volume"].([]interface{}); ok {
+			vol.VsphereVolume = expandVsphereVirtualDiskVolumeSource(vmp)
+		}
+
+		// A local volume only exists on a PersistentVolume. There is nothing to
+		// expand it into, so the volume would reach the API with no source and
+		// Kubernetes would default it to `emptyDir: {}` - fail instead of
+		// quietly handing back a different volume than the one declared.
+		if vmp, ok := mp["local"].([]interface{}); ok && len(vmp) > 0 && vmp[0] != nil {
+			return nil, fmt.Errorf("volume %q: a local block cannot be used on a pod volume, because LocalVolumeSource only exists on a PersistentVolume. Use host_path for a path on the node, or reference the PersistentVolume through persistent_volume_claim", vol.Name)
+		}
+
 		vols = append(vols, vol)
 	}
 	return vols, nil
@@ -1149,9 +1213,10 @@ func expandEmptyDir(dir []interface{}) (*v1.EmptyDirVolumeSource, error) {
 
 		dirBody.Medium = v1.StorageMedium(med)
 	}
-	if v, ok := dirMap["size_limit"]; ok {
-
-		qty, err := resource.ParseQuantity(v.(string))
+	// size_limit is optional with no default, so an unset one arrives as "" -
+	// parsing that fails with a quantity regex error that names no attribute.
+	if v, ok := dirMap["size_limit"].(string); ok && v != "" {
+		qty, err := resource.ParseQuantity(v)
 		if err != nil {
 			return nil, err
 		}

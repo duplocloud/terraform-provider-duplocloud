@@ -63,8 +63,10 @@ func duploAwsRdsGlobalDatabaseSchema() map[string]*schema.Schema {
 			Computed: true,
 		},
 		"make_headless": {
-			Type:             schema.TypeBool,
-			Description:      "It removes the reader instances under secondary cluster by retaining the secondary cluster, Valid during updation",
+			Type: schema.TypeBool,
+			Description: "Removes every instance under the secondary cluster while retaining the cluster itself, " +
+				"including any reader added with `duplocloud_rds_read_replica`. " +
+				"Read replicas can only be added to the secondary cluster while this is `false`. Valid during update.",
 			Default:          false,
 			DiffSuppressFunc: diffSuppressWhenCreating,
 			Optional:         true,
