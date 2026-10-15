@@ -67,6 +67,58 @@ func TestReorderOtherDockerConfigEnvironmentVariables(t *testing.T) {
 	}
 }
 
+func TestOtherDockerConfigsAreEquivalent(t *testing.T) {
+	cases := []struct {
+		name string
+		old  string
+		new  string
+		want bool
+	}{
+		{
+			name: "single env entry casing",
+			old:  `{"env":[{"name":"foo","value":"bar"}]}`,
+			new:  `{"Env":[{"Name":"foo","Value":"bar"}]}`,
+			want: true,
+		},
+		{
+			name: "envFrom reference casing",
+			old:  `{"envFrom":[{"secretRef":{"name":"secret","optional":true}},{"configMapRef":{"name":"config"}}]}`,
+			new:  `{"EnvFrom":[{"SecretRef":{"Name":"secret","Optional":true}},{"ConfigMapRef":{"Name":"config"}}]}`,
+			want: true,
+		},
+		{
+			name: "startup probe casing",
+			old:  `{"startupProbe":{"httpGet":{"path":"/ready","port":8080}}}`,
+			new:  `{"StartupProbe":{"HttpGet":{"Path":"/ready","Port":8080}}}`,
+			want: true,
+		},
+		{
+			name: "envFrom Name value",
+			old:  `{"EnvFrom":[{"SecretRef":{"Name":"first"}}]}`,
+			new:  `{"EnvFrom":[{"SecretRef":{"Name":"second"}}]}`,
+			want: false,
+		},
+		{
+			name: "PodAnnotations key casing",
+			old:  `{"PodAnnotations":{"example.com/key":"value"}}`,
+			new:  `{"PodAnnotations":{"Example.com/key":"value"}}`,
+			want: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			equal, err := otherDockerConfigsAreEquivalent(c.old, c.new)
+			if err != nil {
+				t.Fatalf("Unexpected error from otherDockerConfigsAreEquivalent: %s", err)
+			}
+			if equal != c.want {
+				t.Fatalf("Expected equivalence %t, got %t", c.want, equal)
+			}
+		})
+	}
+}
+
 func TestReduceOtherDockerConfig(t *testing.T) {
 	cases := []struct {
 		given    map[string]interface{}
