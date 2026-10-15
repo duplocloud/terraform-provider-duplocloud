@@ -651,9 +651,10 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 						Default:  false,
 					},
 					"default_ttl": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Computed: true,
+						Type:             schema.TypeInt,
+						Optional:         true,
+						Computed:         true,
+						DiffSuppressFunc: suppressTTLWithCachePolicy,
 					},
 					"field_level_encryption_id": {
 						Type:     schema.TypeString,
@@ -759,14 +760,16 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 						},
 					},
 					"max_ttl": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Computed: true,
+						Type:             schema.TypeInt,
+						Optional:         true,
+						Computed:         true,
+						DiffSuppressFunc: suppressTTLWithCachePolicy,
 					},
 					"min_ttl": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Default:  0,
+						Type:             schema.TypeInt,
+						Optional:         true,
+						Default:          0,
+						DiffSuppressFunc: suppressTTLWithCachePolicy,
 					},
 					"origin_request_policy_id": {
 						Type:     schema.TypeString,

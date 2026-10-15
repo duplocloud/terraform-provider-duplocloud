@@ -707,9 +707,10 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						Default:  false,
 					},
 					"default_ttl": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Computed: true,
+						Type:             schema.TypeInt,
+						Optional:         true,
+						Computed:         true,
+						DiffSuppressFunc: suppressTTLWithCachePolicy,
 					},
 					"field_level_encryption_id": {
 						Type:     schema.TypeString,
@@ -815,14 +816,16 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						},
 					},
 					"max_ttl": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Computed: true,
+						Type:             schema.TypeInt,
+						Optional:         true,
+						Computed:         true,
+						DiffSuppressFunc: suppressTTLWithCachePolicy,
 					},
 					"min_ttl": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Default:  0,
+						Type:             schema.TypeInt,
+						Optional:         true,
+						Default:          0,
+						DiffSuppressFunc: suppressTTLWithCachePolicy,
 					},
 					"origin_request_policy_id": {
 						Type:     schema.TypeString,
@@ -1956,6 +1959,16 @@ func suppressViewerCertificateManagedByAws(k, oldValue, newValue string, d *sche
 	acm, _ := d.Get("viewer_certificate.0.acm_certificate_arn").(string)
 	iam, _ := d.Get("viewer_certificate.0.iam_certificate_id").(string)
 	return acm == "" && iam == ""
+}
+
+// suppressTTLWithCachePolicy hides TTL diffs on an ordered cache behavior that sets
+// cache_policy_id. Expand never sends TTLs for such a behavior (CloudFront rejects
+// them alongside a cache policy), so Read returns 0 and a configured TTL would plan
+// a change on every run.
+func suppressTTLWithCachePolicy(k, oldValue, newValue string, d *schema.ResourceData) bool {
+	prefix := k[:strings.LastIndex(k, ".")+1]
+	cachePolicyId, _ := d.Get(prefix + "cache_policy_id").(string)
+	return cachePolicyId != ""
 }
 
 func flattenViewerCertificate(vc *duplosdk.DuploAwsCloudfrontDistributionViewerCertificate) []interface{} {
