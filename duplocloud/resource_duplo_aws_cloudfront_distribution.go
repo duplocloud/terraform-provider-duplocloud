@@ -68,7 +68,6 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 			Description: "The object that you want CloudFront to return (for example, index.html) when an end user requests the root URL.",
 			Type:        schema.TypeString,
 			Optional:    true,
-			Computed:    true,
 		},
 		"enabled": {
 			Description: "Whether the distribution is enabled to accept end user requests for content.",
@@ -651,16 +650,24 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						Required: true,
 					},
 					"trusted_key_groups": {
-						Type:     schema.TypeList,
-						Optional: true,
-						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Description: "IDs of the CloudFront key groups allowed to sign URLs and cookies for this behavior. If omitted, the key groups already on the behavior are kept, unless `trusted_signers` is set to at least one value, which turns them off. Set to `[]` to turn key groups off. Cannot be set together with `trusted_signers`; CloudFront rejects the request.",
+						Type:        schema.TypeSet,
+						Optional:    true,
+						Computed:    true,
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"trusted_signers": {
-						Type:     schema.TypeList,
-						Optional: true,
-						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Description: "AWS account IDs (or `self`) allowed to sign URLs and cookies for this behavior. If omitted, the signers already on the behavior are kept, unless `trusted_key_groups` is set to at least one value, which turns them off. Set to `[]` to turn trusted signers off. Cannot be set together with `trusted_key_groups`; CloudFront rejects the request.",
+						Type:        schema.TypeSet,
+						Optional:    true,
+						Computed:    true,
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"viewer_protocol_policy": {
 						Type:     schema.TypeString,
@@ -700,9 +707,10 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						Default:  false,
 					},
 					"default_ttl": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Computed: true,
+						Type:             schema.TypeInt,
+						Optional:         true,
+						Computed:         true,
+						DiffSuppressFunc: suppressTTLWithCachePolicy,
 					},
 					"field_level_encryption_id": {
 						Type:     schema.TypeString,
@@ -808,14 +816,16 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						},
 					},
 					"max_ttl": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Computed: true,
+						Type:             schema.TypeInt,
+						Optional:         true,
+						Computed:         true,
+						DiffSuppressFunc: suppressTTLWithCachePolicy,
 					},
 					"min_ttl": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Default:  0,
+						Type:             schema.TypeInt,
+						Optional:         true,
+						Default:          0,
+						DiffSuppressFunc: suppressTTLWithCachePolicy,
 					},
 					"origin_request_policy_id": {
 						Type:     schema.TypeString,
@@ -846,16 +856,24 @@ func duploAwsCloudfrontDistributionSchema() map[string]*schema.Schema {
 						Required: true,
 					},
 					"trusted_key_groups": {
-						Type:     schema.TypeList,
-						Optional: true,
-						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Description: "IDs of the CloudFront key groups allowed to sign URLs and cookies for this behavior. If omitted, the key groups already on the behavior are kept, unless `trusted_signers` is set to at least one value, which turns them off. Set to `[]` to turn key groups off. Cannot be set together with `trusted_signers`; CloudFront rejects the request.",
+						Type:        schema.TypeSet,
+						Optional:    true,
+						Computed:    true,
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"trusted_signers": {
-						Type:     schema.TypeList,
-						Optional: true,
-						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Description: "AWS account IDs (or `self`) allowed to sign URLs and cookies for this behavior. If omitted, the signers already on the behavior are kept, unless `trusted_key_groups` is set to at least one value, which turns them off. Set to `[]` to turn trusted signers off. Cannot be set together with `trusted_key_groups`; CloudFront rejects the request.",
+						Type:        schema.TypeSet,
+						Optional:    true,
+						Computed:    true,
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"viewer_protocol_policy": {
 						Type:     schema.TypeString,
@@ -1172,13 +1190,13 @@ func expandAwsCloudfrontDistributionDefaultCacheBehavior(m map[string]interface{
 	}
 
 	if v, ok := m["trusted_key_groups"]; ok {
-		dcb.TrustedKeyGroups = expandTrustedKeyGroups(v.([]interface{}))
+		dcb.TrustedKeyGroups = expandTrustedKeyGroups(v.(*schema.Set).List())
 	} else {
 		dcb.TrustedKeyGroups = expandTrustedKeyGroups([]interface{}{})
 	}
 
 	if v, ok := m["trusted_signers"]; ok {
-		dcb.TrustedSigners = expandTrustedSigners(v.([]interface{}))
+		dcb.TrustedSigners = expandTrustedSigners(v.(*schema.Set).List())
 	} else {
 		dcb.TrustedSigners = expandTrustedSigners([]interface{}{})
 	}
@@ -1244,13 +1262,13 @@ func expandAwsCloudfrontDistributionCacheBehavior(m map[string]interface{}) dupl
 	}
 
 	if v, ok := m["trusted_key_groups"]; ok {
-		cb.TrustedKeyGroups = expandTrustedKeyGroups(v.([]interface{}))
+		cb.TrustedKeyGroups = expandTrustedKeyGroups(v.(*schema.Set).List())
 	} else {
 		cb.TrustedKeyGroups = expandTrustedKeyGroups([]interface{}{})
 	}
 
 	if v, ok := m["trusted_signers"]; ok {
-		cb.TrustedSigners = expandTrustedSigners(v.([]interface{}))
+		cb.TrustedSigners = expandTrustedSigners(v.(*schema.Set).List())
 	} else {
 		cb.TrustedSigners = expandTrustedSigners([]interface{}{})
 	}
@@ -1741,9 +1759,7 @@ func flattenAwsCloudfrontDistribution(d *schema.ResourceData, duplo *duplosdk.Du
 		d.Set("name", duplo.Comment)
 	}
 
-	if duplo.DefaultRootObject != "" {
-		d.Set("default_root_object", duplo.DefaultRootObject)
-	}
+	d.Set("default_root_object", duplo.DefaultRootObject)
 	if duplo.HttpVersion != nil {
 		d.Set("http_version", duplo.HttpVersion.Value)
 	}
@@ -1943,6 +1959,16 @@ func suppressViewerCertificateManagedByAws(k, oldValue, newValue string, d *sche
 	acm, _ := d.Get("viewer_certificate.0.acm_certificate_arn").(string)
 	iam, _ := d.Get("viewer_certificate.0.iam_certificate_id").(string)
 	return acm == "" && iam == ""
+}
+
+// suppressTTLWithCachePolicy hides TTL diffs on an ordered cache behavior that sets
+// cache_policy_id. Expand never sends TTLs for such a behavior (CloudFront rejects
+// them alongside a cache policy), so Read returns 0 and a configured TTL would plan
+// a change on every run.
+func suppressTTLWithCachePolicy(k, oldValue, newValue string, d *schema.ResourceData) bool {
+	prefix := k[:strings.LastIndex(k, ".")+1]
+	cachePolicyId, _ := d.Get(prefix + "cache_policy_id").(string)
+	return cachePolicyId != ""
 }
 
 func flattenViewerCertificate(vc *duplosdk.DuploAwsCloudfrontDistributionViewerCertificate) []interface{} {

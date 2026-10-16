@@ -58,7 +58,6 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 			Description: "The object that you want CloudFront to return (for example, index.html) when an end user requests the root URL.",
 			Type:        schema.TypeString,
 			Optional:    true,
-			Computed:    true,
 		},
 		"enabled": {
 			Description: "Whether the distribution is enabled to accept end user requests for content.",
@@ -113,10 +112,11 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 			Default:  true,
 		},
 		"use_origin_access_control": {
-			Description: `Duplo will create an origin access control (OAC) and restrict the S3 origin access. On false it will be public<br>For migration from OAI to OAC can be done from duplo cloud portal.`,
-			Type:        schema.TypeBool,
-			Optional:    true,
-			Default:     true,
+			Description:      `Duplo will create an origin access control (OAC) and restrict the S3 origin access. On false it will be public<br>For migration from OAI to OAC can be done from duplo cloud portal.`,
+			Type:             schema.TypeBool,
+			Optional:         true,
+			Default:          true,
+			DiffSuppressFunc: suppressOACWithoutS3Origin,
 		},
 		"cors_allowed_host_names": {
 			Type:     schema.TypeList,
@@ -594,16 +594,24 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 						Required: true,
 					},
 					"trusted_key_groups": {
-						Type:     schema.TypeList,
-						Optional: true,
-						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Description: "IDs of the CloudFront key groups allowed to sign URLs and cookies for this behavior. If omitted, the key groups already on the behavior are kept, unless `trusted_signers` is set to at least one value, which turns them off. Set to `[]` to turn key groups off. Cannot be set together with `trusted_signers`; CloudFront rejects the request.",
+						Type:        schema.TypeSet,
+						Optional:    true,
+						Computed:    true,
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"trusted_signers": {
-						Type:     schema.TypeList,
-						Optional: true,
-						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Description: "AWS account IDs (or `self`) allowed to sign URLs and cookies for this behavior. If omitted, the signers already on the behavior are kept, unless `trusted_key_groups` is set to at least one value, which turns them off. Set to `[]` to turn trusted signers off. Cannot be set together with `trusted_key_groups`; CloudFront rejects the request.",
+						Type:        schema.TypeSet,
+						Optional:    true,
+						Computed:    true,
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"viewer_protocol_policy": {
 						Type:     schema.TypeString,
@@ -643,9 +651,10 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 						Default:  false,
 					},
 					"default_ttl": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Computed: true,
+						Type:             schema.TypeInt,
+						Optional:         true,
+						Computed:         true,
+						DiffSuppressFunc: suppressTTLWithCachePolicy,
 					},
 					"field_level_encryption_id": {
 						Type:     schema.TypeString,
@@ -751,14 +760,16 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 						},
 					},
 					"max_ttl": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Computed: true,
+						Type:             schema.TypeInt,
+						Optional:         true,
+						Computed:         true,
+						DiffSuppressFunc: suppressTTLWithCachePolicy,
 					},
 					"min_ttl": {
-						Type:     schema.TypeInt,
-						Optional: true,
-						Default:  0,
+						Type:             schema.TypeInt,
+						Optional:         true,
+						Default:          0,
+						DiffSuppressFunc: suppressTTLWithCachePolicy,
 					},
 					"origin_request_policy_id": {
 						Type:     schema.TypeString,
@@ -789,16 +800,24 @@ func duploAwsCloudfrontDistributionSchemaV2() map[string]*schema.Schema {
 						Required: true,
 					},
 					"trusted_key_groups": {
-						Type:     schema.TypeList,
-						Optional: true,
-						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Description: "IDs of the CloudFront key groups allowed to sign URLs and cookies for this behavior. If omitted, the key groups already on the behavior are kept, unless `trusted_signers` is set to at least one value, which turns them off. Set to `[]` to turn key groups off. Cannot be set together with `trusted_signers`; CloudFront rejects the request.",
+						Type:        schema.TypeSet,
+						Optional:    true,
+						Computed:    true,
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"trusted_signers": {
-						Type:     schema.TypeList,
-						Optional: true,
-						Computed: true,
-						Elem:     &schema.Schema{Type: schema.TypeString},
+						Description: "AWS account IDs (or `self`) allowed to sign URLs and cookies for this behavior. If omitted, the signers already on the behavior are kept, unless `trusted_key_groups` is set to at least one value, which turns them off. Set to `[]` to turn trusted signers off. Cannot be set together with `trusted_key_groups`; CloudFront rejects the request.",
+						Type:        schema.TypeSet,
+						Optional:    true,
+						Computed:    true,
+						Elem: &schema.Schema{
+							Type:         schema.TypeString,
+							ValidateFunc: validation.StringIsNotEmpty,
+						},
 					},
 					"viewer_protocol_policy": {
 						Type:     schema.TypeString,
@@ -884,6 +903,11 @@ func resourceAwsCloudfrontDistributionV2Read(ctx context.Context, d *schema.Reso
 	// Read cors_allowed_host_names from the S3 origin bucket.
 	// The backend stores CORS settings on the bucket (not in CloudFront) and does not
 	// include them in the CloudFront GET response, so we fetch them directly from S3.
+	// An empty list is recorded when there are none: leaving the Optional+Computed
+	// attribute null makes every plan show it as "known after apply". Only a failed
+	// bucket lookup leaves the prior state alone.
+	corsHosts := []string{}
+	corsLookupFailed := false
 	if duplo.Distribution.DistributionConfig.Origins != nil && duplo.Distribution.DistributionConfig.Origins.Items != nil {
 		for _, origin := range *duplo.Distribution.DistributionConfig.Origins.Items {
 			bucketFullname := cloudfrontS3BucketFullnameFromDomainName(origin.DomainName)
@@ -893,13 +917,18 @@ func resourceAwsCloudfrontDistributionV2Read(ctx context.Context, d *schema.Reso
 			bucket, bucketErr := c.TenantGetV3S3Bucket(tenantID, bucketFullname)
 			if bucketErr != nil || bucket == nil {
 				log.Printf("[WARN] resourceAwsCloudfrontDistributionV2Read(%s, %s): could not retrieve S3 bucket %s for CORS: %v", tenantID, cfdId, bucketFullname, bucketErr)
+				corsLookupFailed = true
 				continue
 			}
 			if len(bucket.CorsAllowedHostNames) > 0 {
-				d.Set("cors_allowed_host_names", bucket.CorsAllowedHostNames)
+				corsHosts = bucket.CorsAllowedHostNames
 			}
+			corsLookupFailed = false
 			break
 		}
+	}
+	if !corsLookupFailed {
+		d.Set("cors_allowed_host_names", corsHosts)
 	}
 
 	log.Printf("[TRACE] resourceAwsCloudfrontDistributionRead(%s, %s): end", tenantID, cfdId)
@@ -913,6 +942,22 @@ func cloudfrontS3BucketFullnameFromDomainName(domainName string) string {
 		return domainName[:idx]
 	}
 	return ""
+}
+
+// suppressOACWithoutS3Origin suppresses use_origin_access_control diffs when no
+// origin is an S3 bucket. OAC only applies to S3 origins, and Read infers the
+// value from them, so a custom-only distribution always reads back false.
+func suppressOACWithoutS3Origin(k, oldValue, newValue string, d *schema.ResourceData) bool {
+	for _, o := range d.Get("origin").(*schema.Set).List() {
+		origin, ok := o.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if domainName, _ := origin["domain_name"].(string); cloudfrontS3BucketFullnameFromDomainName(domainName) != "" {
+			return false
+		}
+	}
+	return true
 }
 
 func resourceAwsCloudfrontDistributionV2Create(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -1117,9 +1162,7 @@ func flattenAwsCloudfrontDistributionV2(d *schema.ResourceData, duplo *duplosdk.
 		d.Set("name", duplo.Comment)
 	}
 
-	if duplo.DefaultRootObject != "" {
-		d.Set("default_root_object", duplo.DefaultRootObject)
-	}
+	d.Set("default_root_object", duplo.DefaultRootObject)
 	if duplo.HttpVersion != nil {
 		d.Set("http_version", duplo.HttpVersion.Value)
 	}
