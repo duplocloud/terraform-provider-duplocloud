@@ -705,11 +705,19 @@ func expandGCPNodePoolAutoScaling(d *schema.ResourceData, req *duplosdk.DuploGCP
 		req.LocationPolicy = val
 	}
 
-	if val, ok := d.Get("min_node_count").(int); ok {
-		req.MinNodeCount = &val
-	}
-	if val, ok := d.Get("max_node_count").(int); ok {
-		req.MaxNodeCount = &val
+	// Per-location counts and total counts are mutually exclusive (see
+	// gcpNodePoolValidateParameters). Only populate the pair the user set, so
+	// autoScalingHelper does not pick unset per-location counts (0/0) over
+	// the total counts. max must be >= 1 when autoscaling, so it decides
+	// which pair is in use; min may legitimately be 0.
+	if maxNodeCount := d.Get("max_node_count").(int); maxNodeCount > 0 {
+		minNodeCount := d.Get("min_node_count").(int)
+		req.MinNodeCount = &minNodeCount
+		req.MaxNodeCount = &maxNodeCount
+	} else if totalMaxNodeCount := d.Get("total_max_node_count").(int); totalMaxNodeCount > 0 {
+		totalMinNodeCount := d.Get("total_min_node_count").(int)
+		req.TotalMinNodeCount = &totalMinNodeCount
+		req.TotalMaxNodeCount = &totalMaxNodeCount
 	}
 }
 
