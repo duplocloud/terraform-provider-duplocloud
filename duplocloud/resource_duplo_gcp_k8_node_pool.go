@@ -461,7 +461,7 @@ func resourceGCPK8NodePoolCreate(ctx context.Context, d *schema.ResourceData, m 
 	// Create the request object.
 	rq, err := expandGCPNodePool(d)
 	if err != nil {
-		return diag.Errorf("Duplocloud resource '%s'\n%s", rq.Name, err)
+		return diag.Errorf("Duplocloud resource '%s'\n%s", d.Get("name").(string), err)
 
 	}
 	// Post the object to Duplo
