@@ -2,7 +2,10 @@ package duplocloud
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
+
+	"github.com/duplocloud/terraform-provider-duplocloud/duplosdk"
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -144,4 +147,178 @@ func TestSecretDataDiff_UnparseableStateStillDiffs(t *testing.T) {
 	diff := driftPlan(t, driftState(cty.StringVal("{")), driftConfig(cty.NullVal(cty.String)))
 
 	assert.Contains(t, diff.Attributes, "secret_data")
+}
+
+// --- DUPLO-44790 -----------------------------------------------------------
+
+// The backend decodes any secret value that looks like a JSON object or array before
+// returning it, so state holds an object where the configuration holds the string it
+// came from.  dockerconfigjson and dockercfg secrets always look like that.
+const (
+	dockerConfigJSONState  = `{".dockerconfigjson":{"auths":{"example.io":{"auth":"dTpw"}}}}`
+	dockerConfigJSONConfig = `{".dockerconfigjson":"{\"auths\":{\"example.io\":{\"auth\":\"dTpw\"}}}"}`
+)
+
+func TestSecretDataCompare_DecodedObjectMatchesItsJSONString(t *testing.T) {
+	equal, err := secretDataCompare(dockerConfigJSONState, dockerConfigJSONConfig)
+	assert.NoError(t, err)
+	assert.True(t, equal, "dockerconfigjson")
+
+	equal, err = secretDataCompare(`{".dockercfg":{"example.io":{"auth":"dTpw"}}}`, `{".dockercfg":"{\"example.io\":{\"auth\":\"dTpw\"}}"}`)
+	assert.NoError(t, err)
+	assert.True(t, equal, "dockercfg")
+
+	equal, err = secretDataCompare(`{"hosts":["a","b"]}`, `{"hosts":"[\"a\",\"b\"]"}`)
+	assert.NoError(t, err)
+	assert.True(t, equal, "array")
+}
+
+func TestSecretDataCompare_DecodedObjectStillDiffsOnRealChange(t *testing.T) {
+	equal, err := secretDataCompare(dockerConfigJSONState, `{".dockerconfigjson":"{\"auths\":{\"example.io\":{\"auth\":\"bmV3\"}}}"}`)
+	assert.NoError(t, err)
+	assert.False(t, equal, "rotated credential")
+
+	equal, err = secretDataCompare(dockerConfigJSONState, `{".dockerconfigjson":"not json"}`)
+	assert.NoError(t, err)
+	assert.False(t, equal, "non-JSON string against an object")
+}
+
+// Only objects and arrays are decoded by the backend, so a scalar that parses as JSON
+// is still compared as the string it is.
+func TestSecretDataCompare_JSONScalarStringIsNotDecoded(t *testing.T) {
+	for _, tc := range []struct{ state, config string }{
+		{`{"x":1}`, `{"x":"1"}`},
+		{`{"x":true}`, `{"x":"true"}`},
+		{`{"x":null}`, `{"x":"null"}`},
+	} {
+		equal, err := secretDataCompare(tc.state, tc.config)
+		assert.NoError(t, err)
+		assert.False(t, equal, tc.config)
+	}
+}
+
+// The object form in the configuration compares against the object in state as well.
+func TestSecretDataCompare_ObjectInConfigMatchesObjectInState(t *testing.T) {
+	equal, err := secretDataCompare(dockerConfigJSONState, dockerConfigJSONState)
+	assert.NoError(t, err)
+	assert.True(t, equal)
+}
+
+func TestSecretDataDiff_DockerConfigJSONConverges(t *testing.T) {
+	diff := driftPlan(t, driftState(cty.StringVal(dockerConfigJSONState)), driftConfig(cty.StringVal(dockerConfigJSONConfig)))
+
+	assert.NotContains(t, diff.Attributes, "secret_data")
+}
+
+// Integers above 2^53 do not survive a float64, so both sides are decoded with their
+// digits intact and an edit between two such integers still plans.
+func TestSecretDataCompare_LargeIntegersStayDistinct(t *testing.T) {
+	state := `{"k":{"n":9007199254740992}}`
+
+	equal, err := secretDataCompare(state, `{"k":"{\"n\":9007199254740993}"}`)
+	assert.NoError(t, err)
+	assert.False(t, equal, "changed integer")
+
+	equal, err = secretDataCompare(state, `{"k":"{\"n\":9007199254740992}"}`)
+	assert.NoError(t, err)
+	assert.True(t, equal, "same integer")
+
+	equal, err = secretDataCompare(`{"n":9007199254740992}`, `{"n":9007199254740993}`)
+	assert.NoError(t, err)
+	assert.False(t, equal, "top-level integer")
+}
+
+// Trailing data after the JSON value is still rejected, as json.Unmarshal did.
+func TestSecretDataCompare_TrailingDataIsNotJSON(t *testing.T) {
+	_, err := secretDataCompare(`{"k":"v"} junk`, `{"k":"v"}`)
+	assert.Error(t, err)
+
+	equal, err := secretDataCompare(`{"k":{"a":1}}`, `{"k":"{\"a\":1} junk"}`)
+	assert.NoError(t, err)
+	assert.False(t, equal, "config string with trailing data is compared as a string")
+}
+
+// What Read writes to state for a secret whose decoded value holds an integer above 2^53
+// matches the configuration it came from, so an unchanged secret does not plan.
+func TestSecretDataCompare_UnchangedLargeIntegerFromBackendMatches(t *testing.T) {
+	var secret duplosdk.DuploK8sSecret
+	assert.NoError(t, json.Unmarshal([]byte(`{"SecretName":"s","SecretData":{"k":{"n":9007199254740993}}}`), &secret))
+	state, err := json.Marshal(secret.SecretData)
+	assert.NoError(t, err)
+
+	equal, err := secretDataCompare(string(state), `{"k":"{\"n\":9007199254740993}"}`)
+	assert.NoError(t, err)
+	assert.True(t, equal)
+}
+
+// The backend respells a number inside a decoded value, so numbers are matched by the
+// spelling it would read back: 1e3 and 1000.0 are the same, as are two decimals that parse
+// to one double, while large integers and 1 against 1.0 still differ.
+func TestSecretDataCompare_NumbersMatchByStoredSpelling(t *testing.T) {
+	for _, tc := range []struct {
+		state, config string
+		equal         bool
+	}{
+		{`{"k":{"n":1000.0}}`, `{"k":"{\"n\":1e3}"}`, true},
+		{`{"k":{"n":1.5}}`, `{"k":"{\"n\":1.50}"}`, true},
+		{`{"k":[1,2.0]}`, `{"k":"[1,2.00]"}`, true},
+		{`{"k":[1,2.0]}`, `{"k":"[1.0,2]"}`, false},
+		{`{"k":{"n":0.1}}`, `{"k":"{\"n\":0.10000000000000001}"}`, true},
+		{`{"k":{"n":0.84551240822557}}`, `{"k":"{\"n\":0.84551240822557006}"}`, true},
+		{`{"k":{"n":0.84551240822557006}}`, `{"k":"{\"n\":0.84551240822557006}"}`, true},
+		{`{"k":{"n":0.84551240822557}}`, `{"k":"{\"n\":0.84551240822558}"}`, false},
+		{`{"k":{"n":1000}}`, `{"k":"{\"n\":1001}"}`, false},
+		{`{"k":{"n":9007199254740992}}`, `{"k":"{\"n\":9007199254740993}"}`, false},
+		{`{"k":{"n":1}}`, `{"k":"{\"n\":\"1\"}"}`, false},
+	} {
+		equal, err := secretDataCompare(tc.state, tc.config)
+		assert.NoError(t, err)
+		assert.Equal(t, tc.equal, equal, "%s vs %s", tc.state, tc.config)
+	}
+}
+
+// A configured scalar number is stored as the backend's spelling of it, so the state
+// string is compared against that spelling rather than the configured text.
+func TestNewtonsoftNumberString(t *testing.T) {
+	for in, want := range map[string]string{
+		"1":                      "1",
+		"-0":                     "0",
+		"9007199254740993":       "9007199254740993",
+		"1.0":                    "1.0",
+		"1.50":                   "1.5",
+		"1e3":                    "1000.0",
+		"-2.5E1":                 "-25.0",
+		"0.1":                    "0.1",
+		"0.0001":                 "0.0001",
+		"0.00001":                "1E-05",
+		"1e15":                   "1E+15",
+		"123456789012345.0":      "123456789012345.0",
+		"123456789012345.6":      "123456789012345.59",
+		"0.30000000000000004":    "0.30000000000000004",
+		"1.7976931348623157e308": "1.7976931348623157E+308",
+		"-0.0":                   "0.0",
+	} {
+		assert.Equal(t, want, newtonsoftNumberString(json.Number(in)), in)
+	}
+}
+
+func TestSecretDataCompare_ScalarNumberMatchesStoredSpelling(t *testing.T) {
+	for _, tc := range []struct {
+		state, config string
+		equal         bool
+	}{
+		{`{"x":"1.5"}`, `{"x":1.50}`, true},
+		{`{"x":"1000.0"}`, `{"x":1e3}`, true},
+		{`{"x":"1"}`, `{"x":1}`, true},
+		{`{"x":"1"}`, `{"x":1.0}`, false},
+		{`{"x":"1.0"}`, `{"x":1}`, false},
+		{`{"x":"1.50"}`, `{"x":1.5}`, false},
+		{`{"x":"0.84551240822557"}`, `{"x":0.84551240822557006}`, true},
+		{`{"x":"0.6822871999174"}`, `{"x":0.68228719991740006}`, true},
+		{`{"x":"9007199254740992"}`, `{"x":9007199254740993}`, false},
+	} {
+		equal, err := secretDataCompare(tc.state, tc.config)
+		assert.NoError(t, err)
+		assert.Equal(t, tc.equal, equal, "%s vs %s", tc.state, tc.config)
+	}
 }
