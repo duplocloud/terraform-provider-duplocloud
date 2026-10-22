@@ -478,7 +478,7 @@ func carryForwardSecretData(c *duplosdk.Client, tenantID, name string, rq *duplo
 		if creating {
 			verb = "create"
 		}
-		return fmt.Errorf("Unable to retrieve tenant %s k8s secret %s for %s: %s", tenantID, name, verb, cerr)
+		return fmt.Errorf("unable to retrieve tenant %s k8s secret %s for %s: %s", tenantID, name, verb, cerr)
 	}
 	if current != nil && current.SecretData != nil {
 		rq.SecretData = current.SecretData

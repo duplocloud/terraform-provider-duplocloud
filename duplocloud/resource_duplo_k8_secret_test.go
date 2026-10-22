@@ -390,7 +390,7 @@ func k8sSecretServerStatus(t *testing.T, list string, posted *string, listStatus
 		if listStatus != http.StatusOK {
 			w.WriteHeader(listStatus)
 		}
-		fmt.Fprint(w, list)
+		_, _ = fmt.Fprint(w, list)
 	}))
 	c, err := duplosdk.NewClient(srv.URL, "fake-token")
 	if err != nil {

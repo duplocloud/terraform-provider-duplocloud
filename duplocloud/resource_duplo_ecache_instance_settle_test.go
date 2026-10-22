@@ -23,7 +23,7 @@ func ecacheSettleServer(t *testing.T, readings []string) (*httptest.Server, *dup
 			n++
 		}
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, body)
+		_, _ = fmt.Fprint(w, body)
 	}))
 	c, err := duplosdk.NewClient(srv.URL, "fake-token")
 	if err != nil {
