@@ -47,6 +47,7 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
     priority        = "Spot"
   }
   availability_zones = ["1", "2"]
+  max_pods_per_node  = 50
 }
 ```
 
@@ -67,8 +68,8 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
 - `availability_zones` (Set of String) availability zones of node pool
 - `enable_auto_scaling` (Boolean) Whether to enable auto-scaler.
 - `identifier` (Number, Deprecated) Node pool identifier. This field is deprecated, Please use `name` instead. identifier has been deprecated instead use name
+- `max_pods_per_node` (Number) The maximum number of pods that can run on each node in the node pool. Must be at least 10. Changing this forces a new resource to be created.
 - `name` (String) The name of the node pool.
-- `max_pods_per_node` (Number) The maximum number of pods that can run on each node in the node pool. Changing this forces a new resource to be created.
 - `node_labels` (Block List) Kubernetes labels which should be applied to nodes in this Node Pool. (see [below for nested schema](#nestedblock--node_labels))
 - `node_taints` (List of String) A list of Kubernetes taints which should be applied to nodes in the agent pool.
 - `os_disk_size_gb` (Number) The Agent Operating System disk size in GB.

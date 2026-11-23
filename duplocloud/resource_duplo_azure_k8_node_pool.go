@@ -161,11 +161,12 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
 		"max_pods_per_node": {
-			Description: "The maximum number of pods that can run on each node in the node pool. Changing this forces a new resource to be created.",
-			Type:        schema.TypeInt,
-			Optional:    true,
-			Computed:    true,
-			ForceNew:    true,
+			Description:  "The maximum number of pods that can run on each node in the node pool. Must be at least 10. Changing this forces a new resource to be created.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Computed:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IntAtLeast(10),
 		},
 		"node_taints": {
 			Description:      "A list of Kubernetes taints which should be applied to nodes in the agent pool.",
