@@ -32,4 +32,5 @@ resource "duplocloud_azure_k8_node_pool" "node_pool" {
     priority        = "Spot"
   }
   availability_zones = ["1", "2"]
+  max_pods_per_node  = 50
 }
