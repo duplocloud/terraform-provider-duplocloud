@@ -21,6 +21,7 @@ type DuploAzureK8NodePoolRequest struct {
 	NodeLabels             *[]DuploKeyStringValue `json:"NodeLabels,omitempty"`
 	OsDiskSizeGB           int                    `json:"OsDiskSizeGB,omitempty"`
 	OsSKU                  string                 `json:"OsSKU,omitempty"`
+	MaxPods                int                    `json:"MaxPods,omitempty"`
 }
 
 type DuploAzureK8NodePoolDeleteRequest struct {
@@ -62,6 +63,7 @@ type DuploAzureK8NodePool struct {
 	NodeLabels             *[]DuploKeyStringValue `json:"NodeLabels,omitempty"`
 	OsDiskSizeGB           int                    `json:"OsDiskSizeGB,omitempty"`
 	OsSKU                  string                 `json:"OsSKU,omitempty"`
+	MaxPods                int                    `json:"MaxPods,omitempty"`
 }
 
 func (c *Client) AzureK8NodePoolCreate(tenantID string, rq *DuploAzureK8NodePoolRequest) (*string, ClientError) {

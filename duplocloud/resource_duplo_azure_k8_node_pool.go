@@ -160,6 +160,14 @@ func duploAgentK8NodePoolSchema() map[string]*schema.Schema {
 			Computed:         true,
 			DiffSuppressFunc: diffSuppressWhenNotCreating,
 		},
+		"max_pods_per_node": {
+			Description:  "The maximum number of pods that can run on each node in the node pool. Must be at least 10. Changing this forces a new resource to be created.",
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Computed:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IntAtLeast(10),
+		},
 		"node_taints": {
 			Description:      "A list of Kubernetes taints which should be applied to nodes in the agent pool.",
 			Type:             schema.TypeList,
@@ -405,6 +413,9 @@ func expandAgentK8NodePool(d *schema.ResourceData, identifier string) (*duplosdk
 	if v, ok := d.GetOk("os_disk_size_gb"); ok && v != nil && v.(int) != 0 {
 		nodePool.OsDiskSizeGB = v.(int)
 	}
+	if v, ok := d.GetOk("max_pods_per_node"); ok && v.(int) > 0 {
+		nodePool.MaxPods = v.(int)
+	}
 	if v, ok := d.GetOk("node_taints"); ok && v != nil {
 		nodetaints := v.([]interface{})
 		if len(nodetaints) > 0 {
@@ -473,6 +484,9 @@ func flattenAgentK8NodePool(d *schema.ResourceData, duplo *duplosdk.DuploAzureK8
 	}
 	if duplo.OsDiskSizeGB != 0 {
 		d.Set("os_disk_size_gb", duplo.OsDiskSizeGB)
+	}
+	if duplo.MaxPods > 0 {
+		d.Set("max_pods_per_node", duplo.MaxPods)
 	}
 	if len(duplo.NodeTaints) > 0 {
 		d.Set("node_taints", duplo.NodeTaints)
