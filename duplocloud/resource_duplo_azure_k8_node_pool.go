@@ -471,9 +471,9 @@ func flattenAgentK8NodePool(d *schema.ResourceData, duplo *duplosdk.DuploAzureK8
 		mp["eviction_policy"] = duplo.ScaleSetEvictionPolicy
 		mp["spot_max_price"] = duplo.SpotMaxPrice
 	}
-	if len(duplo.AvailabilityZones) > 0 {
-		d.Set("availability_zones", duplo.AvailabilityZones)
-	}
+	// Always set ForceNew+Computed fields, even when empty. A null value in state
+	// (e.g. after import) is planned as "known after apply" and forces replacement.
+	d.Set("availability_zones", duplo.AvailabilityZones)
 	if duplo.K8sWorkerOs == 1 {
 		d.Set("os_type", "Windows")
 	} else {
@@ -485,9 +485,7 @@ func flattenAgentK8NodePool(d *schema.ResourceData, duplo *duplosdk.DuploAzureK8
 	if duplo.OsDiskSizeGB != 0 {
 		d.Set("os_disk_size_gb", duplo.OsDiskSizeGB)
 	}
-	if duplo.MaxPods > 0 {
-		d.Set("max_pods_per_node", duplo.MaxPods)
-	}
+	d.Set("max_pods_per_node", duplo.MaxPods)
 	if len(duplo.NodeTaints) > 0 {
 		d.Set("node_taints", duplo.NodeTaints)
 	}
